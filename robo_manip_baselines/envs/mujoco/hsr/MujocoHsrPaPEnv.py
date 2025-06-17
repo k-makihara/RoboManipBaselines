@@ -5,7 +5,7 @@ import numpy as np
 from .MujocoHsrEnvBase import MujocoHsrEnvBase
 
 
-class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
+class MujocoHsrPaPEnv(MujocoHsrEnvBase):
     def __init__(
         self,
         **kwargs,
@@ -14,10 +14,10 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
             self,
             path.join(
                 path.dirname(__file__),
-                "../../assets/mujoco/envs/hsr/env_hsr_tidyup.xml",
+                "../../assets/mujoco/envs/hsr/env_hsr_tidyup_2.xml",
             ),
-            np.array([0.0] * 3 + [0.25, -2.0, 0.0, -1.0, 0.0, 0.8]),
-            #np.array([-0.5 ,-0.1, 0.0] + [0.35, -2.2, 0.0, -0.3, 0.0, 0.8]),
+            #np.array([0.0] * 3 + [0.25, -2.0, 0.0, -1.0, 0.0, 0.8]),
+            np.array([-0.5 ,-0.1, 0.0] + [0.35, -2.2, 0.0, -0.3, 0.0, 0.8]),
             **kwargs,
         )
 

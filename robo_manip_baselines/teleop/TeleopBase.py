@@ -124,6 +124,7 @@ class EndTeleopPhase(PhaseBase):
                 f"[{self.op.__class__.__name__}] Teleoperation has failed. Reset without saving."
             )
             self.op.reset_flag = True
+        #self.op.reset_flag = True
 
 
 class ReplayPhase(PhaseBase):
@@ -381,6 +382,7 @@ class TeleopBase(ABC):
             iteration_start_time = time.time()
 
             if self.reset_flag:
+                print("test")
                 self.reset()
                 self.reset_flag = False
 

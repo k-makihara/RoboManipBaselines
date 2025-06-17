@@ -18,5 +18,6 @@ from .vx300s.MujocoVx300sPickEnv import MujocoVx300sPickEnv
 from .aloha.MujocoAlohaCableEnv import MujocoAlohaCableEnv
 
 from .hsr.MujocoHsrTidyupEnv import MujocoHsrTidyupEnv
+from .hsr.MujocoHsrPaPEnv import MujocoHsrPaPEnv
 
 from .g1.MujocoG1BottlesEnv import MujocoG1BottlesEnv

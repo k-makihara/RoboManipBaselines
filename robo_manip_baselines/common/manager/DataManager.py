@@ -119,10 +119,11 @@ class DataManager:
                         raise ValueError(
                             f"[{self.__class__.__name__}] Unsupported type of data sequence: {type(all_data_seq[key])}"
                         )
-
                     if DataKey.is_rgb_image_key(key):
                         video_filename = os.path.join(filename, f"{key}.rmb.mp4")
+                        #print(key)
                         images = np.array(all_data_seq[key])
+                        #print(images.shape)
                         tasks.append(
                             executor.submit(self.save_rgb_image, video_filename, images)
                         )
@@ -142,6 +143,13 @@ class DataManager:
             for key in meta_data.keys():
                 h5file.attrs[key] = meta_data[key]
             h5file.attrs["format"] = "RmbData-Compact"
+
+            for fut in tasks:
+                err = fut.exception()       # 例外があれば object が入る
+                if err is not None:
+                    print("✗ task failed:", err)
+                else:
+                    print("✓ task succeeded, result =", fut.result())
 
     def dump_to_hdf5(self, filename, all_data_seq, meta_data):
         os.makedirs(os.path.dirname(filename), exist_ok=True)

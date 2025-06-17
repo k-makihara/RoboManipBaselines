@@ -104,3 +104,51 @@ class GraspPhaseBase(PhaseBase, ABC):
             ] = action_limit[body_manager.body_config.gripper_joint_idxes_for_limit]
 
         self.duration = 0.5  # [s]
+
+class HSRGraspPhaseBase(PhaseBase, ABC):
+    def start(self):
+        super().start()
+
+        self.set_target()
+
+    def pre_update(self):
+        self.op.motion_manager.set_command_data(
+            DataKey.COMMAND_GRIPPER_JOINT_POS, self.gripper_joint_pos
+        )
+
+    def check_transition(self):
+        return self.get_elapsed_duration() > self.duration
+
+    @abstractmethod
+    def set_target(self):
+        pass
+
+    def set_target_close(self):
+        self.set_target_limit("low")
+
+    def set_target_open(self):
+        self.set_target_limit("high")
+
+    def set_target_limit(self, high_low):
+        if high_low == "high":
+            action_limit = self.op.env.action_space.high
+        elif high_low == "low":
+            action_limit = self.op.env.action_space.low
+        else:
+            raise ValueError(
+                f"[{self.__class__.__name__}] Invalid high_low label: {high_low}"
+            )
+
+        self.gripper_joint_pos = np.zeros(
+            DataKey.get_dim(DataKey.COMMAND_GRIPPER_JOINT_POS, self.op.env)
+        )
+
+        for body_manager in self.op.motion_manager.body_manager_list:
+            if not isinstance(body_manager, ArmManager):
+                continue
+
+            self.gripper_joint_pos[
+                body_manager.body_config.gripper_joint_idxes_in_gripper_joint_pos
+            ] = action_limit[body_manager.body_config.gripper_joint_idxes_for_limit]
+
+        self.duration = 0.5  # [s]

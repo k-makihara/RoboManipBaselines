@@ -1,4 +1,4 @@
-from .base.PhaseBase import PhaseBase, ReachPhaseBase, GraspPhaseBase
+from .base.PhaseBase import PhaseBase, ReachPhaseBase, GraspPhaseBase, HSRGraspPhaseBase
 from .base.DatasetBase import DatasetBase
 from .base.TrainBase import TrainBase
 from .base.RolloutBase import RolloutBase
