@@ -47,9 +47,11 @@ class RolloutPhase(PhaseBase):
         self.op.rollout_time_idx = 0
         self.termination_time = None
         print(
-            f"[{self.op.__class__.__name__}] Start policy rollout (world_idx: {self.op.world_idx}). "
-            "Press the 'n' key to finish policy rollout."
+            f"[{self.op.__class__.__name__}] Start policy rollout. Press the 'n' key to finish policy rollout."
         )
+        print(f"  - world idx: {self.op.world_idx}")
+        if self.op.require_task_desc:
+            print(f"  - task desc: {self.op.args.task_desc}")
 
     def pre_update(self):
         if self.op.rollout_time_idx % self.op.args.skip == 0:
@@ -92,7 +94,7 @@ class RolloutPhase(PhaseBase):
                     transition_flag = True
 
         if transition_flag:
-            success_str = "success" if self.op.reward > 0.0 else "failure"
+            success_str = "success" if self.op.reward >= 1.0 else "failure"
             print(
                 # Do not change the following print description, as it will be used
                 # to automatically obtain the task success/failure result
@@ -100,7 +102,7 @@ class RolloutPhase(PhaseBase):
                 flush=True,
             )
 
-            self.op.result["success"].append(bool(self.op.reward > 0.0))
+            self.op.result["success"].append(bool(self.op.reward >= 1.0))
             self.op.result["reward"].append(self.op.reward)
             self.op.result["duration"].append(elapsed_duration)
 
@@ -131,6 +133,8 @@ class EndRolloutPhase(PhaseBase):
 
 
 class RolloutBase(ABC):
+    require_task_desc = False
+
     def __init__(self):
         self.setup_args()
 
@@ -258,6 +262,11 @@ class RolloutBase(ABC):
                 "used only when '--output_image_dir' option is enabled)."
             ),
         )
+
+        if self.require_task_desc:
+            parser.add_argument(
+                "--task_desc", type=str, required=True, help="task description"
+            )
 
         self.set_additional_args(parser)
 
@@ -536,7 +545,7 @@ class RolloutBase(ABC):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         demo_name = remove_suffix(self.env.spec.name, "Env")
-        success_str = "success" if self.reward > 0.0 else "failure"
+        success_str = "success" if self.reward >= 1.0 else "failure"
         image_path = os.path.abspath(
             os.path.join(
                 self.args.output_image_dir,
