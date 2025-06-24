@@ -79,6 +79,11 @@ register(
     entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrPaPEnv",
 )
 
+register(
+    id="robo_manip_baselines/MujocoHsrShelfPaPEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrShelfPaPEnv",
+)
+
 ## G1
 register(
     id="robo_manip_baselines/MujocoG1BottlesEnv-v0",

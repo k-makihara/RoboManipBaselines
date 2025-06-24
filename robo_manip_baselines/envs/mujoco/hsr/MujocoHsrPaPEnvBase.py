@@ -20,14 +20,8 @@ from ..MujocoEnvBase import MujocoEnvBase
 
 
 class MujocoHsrEnvBase(MujocoEnvBase):
-    # default_camera_config = {
-    #     "azimuth": -180.0,
-    #     "elevation": -30.0,
-    #     "distance": 1.8,
-    #     "lookat": [0.5, 0.0, 0.2],
-    # }
     default_camera_config = {
-        "azimuth": 180.0,
+        "azimuth": 0.0,
         "elevation": -30.0,
         "distance": 1.8,
         "lookat": [0.5, 0.0, 0.2],

@@ -2,12 +2,11 @@ from os import path
 
 import numpy as np
 
-from .MujocoHsrEnvBase import MujocoHsrEnvBase
+from .MujocoHsrPaPEnvBase import MujocoHsrEnvBase
 import mujoco
 from mujoco import mjtObj
 
-
-class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
+class MujocoHsrShelfPaPEnv(MujocoHsrEnvBase):
     def __init__(
         self,
         **kwargs,
@@ -16,12 +15,14 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
             self,
             path.join(
                 path.dirname(__file__),
-                "../../assets/mujoco/envs/hsr/env_hsr_tidyup.xml",
+                "../../assets/mujoco/envs/hsr/env_hsr_shelfpap.xml",
             ),
-            np.array([0.0] * 3 + [0.25, -2.0, 0.0, -1.0, 0.0, 0.8]),
+            #np.array([0.0] * 3 + [0.25, -2.0, 0.0, -1.0, 0.0, 0.8]),
             #np.array([-0.5 ,-0.1, 0.0] + [0.35, -2.2, 0.0, -0.3, 0.0, 0.8]),
+            np.array([-0.5 ,-0.1, 0.0] + [0.1, -0.4, 0.0, -1.0, 0.0, 0.8]),
             **kwargs,
         )
+        
 
         self.original_obj_pos = self.model.body("bottle1").pos.copy()
         self.obj_pos_offsets = np.array(
@@ -63,12 +64,12 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
             world_idx = cumulative_idx % len(self.obj_pos_offsets)
 
         obj_pos = self.original_obj_pos + self.obj_pos_offsets[world_idx]
-        if self.world_random_scale is not None:
-           obj_pos += np.random.uniform(
-               low=-1.0 * self.world_random_scale, high=self.world_random_scale, size=3
-           )
-        #self.model.body("bottle1").pos = obj_pos
-        #print(obj_pos)
+        # if self.world_random_scale is not None:
+        #    obj_pos += np.random.uniform(
+        #        low=-1.0 * self.world_random_scale, high=self.world_random_scale, size=3
+        #    )
+        
+        obj_pos[2] = self.original_obj_pos[2]
         
         body_id = mujoco.mj_name2id(self.model, mjtObj.mjOBJ_BODY, "bottle1")
         jnt_id = self.model.body_jntadr[body_id]
@@ -76,7 +77,6 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
 
         self.init_qpos[qpos_addr : qpos_addr+3] = obj_pos
         self.init_qpos[qpos_addr+3 : qpos_addr+7] = np.array([1.0, 0.0, 0.0, 0.0])
-        print(obj_pos)
 
 
 

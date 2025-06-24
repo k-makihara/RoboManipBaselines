@@ -1,6 +1,7 @@
 from .InputDeviceBase import InputDeviceBase
 from .SpacemouseInputDevice import SpacemouseInputDevice
 from .KeyboardInputDevice import KeyboardInputDevice
+from .KeyboardMobileInputDevice import KeyboardMobileInputDevice
 from .SpacemouseMobileInputDevice import SpacemouseMobileInputDevice
 from .GelloInputDevice import GelloInputDevice
 from .TeleopBase import TeleopBase
