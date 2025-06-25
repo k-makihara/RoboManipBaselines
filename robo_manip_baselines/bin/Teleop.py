@@ -3,7 +3,8 @@ import importlib
 import importlib.util
 import os
 import sys
-
+sys.path.remove('/opt/openrobots/lib/python3.8/site-packages')
+sys.path.append('/opt/ros/noetic/lib/python3/dist-packages')
 import yaml
 
 

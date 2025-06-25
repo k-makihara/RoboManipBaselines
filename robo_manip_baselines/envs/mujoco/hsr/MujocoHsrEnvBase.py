@@ -82,11 +82,7 @@ class MujocoHsrEnvBase(MujocoEnvBase):
                     motion_manager.body_manager_list[0],
                     **{**default_kwargs.get(0, {}), **overwrite_kwargs.get(0, {})},
                 ),
-                # SpacemouseMobileInputDevice(
-                #     motion_manager.body_manager_list[1],
-                #     **{**default_kwargs.get(1, {}), **overwrite_kwargs.get(1, {})},
-                # ),
-                KeyboardMobileInputDevice(
+                SpacemouseMobileInputDevice(
                     motion_manager.body_manager_list[1],
                     **{**default_kwargs.get(1, {}), **overwrite_kwargs.get(1, {})},
                 ),

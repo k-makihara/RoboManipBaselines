@@ -26,12 +26,12 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
         self.original_obj_pos = self.model.body("bottle1").pos.copy()
         self.obj_pos_offsets = np.array(
             [
-                #[-0.03, 0.0, 0.0],
+                [-0.03, 0.0, 0.0],
                 [0.0, 0.0, 0.0],
-                #[0.03, 0.0, 0.0],
-                #[0.06, 0.0, 0.0],
-                #[0.09, 0.0, 0.0],
-                #[0.12, 0.0, 0.0],
+                [0.03, 0.0, 0.0],
+                [0.06, 0.0, 0.0],
+                [0.09, 0.0, 0.0],
+                [0.12, 0.0, 0.0],
             ]
             )
         self.original_robot_pos = self.model.body("hsr_body").pos.copy()
