@@ -5,6 +5,7 @@ import numpy as np
 from .MujocoHsrEnvBase import MujocoHsrEnvBase
 import mujoco
 from mujoco import mjtObj
+from collections import deque
 
 
 class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
@@ -57,6 +58,35 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
                 #[0.12, 0.0, 0.0],
             ]
             )
+
+        #self.data = mujoco.MjData(self.model)
+        self.body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "bottle1")
+        jnt_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "hand_motor_joint")
+        self.qpos_addr = self.model.jnt_qposadr[jnt_id]
+        self.prev_poses = deque(maxlen=5)
+        #for i in range(5):
+        #    self.prev_poses.append(self.original_obj_pos)
+        self.final_pos = [0.73894921, 0.09491683, 0.03478449]
+
+    def _get_success(self):
+
+        def euclidean_distance_np(a, b):
+            a = np.asarray(a, dtype=float)
+            b = np.asarray(b, dtype=float)
+            return np.linalg.norm(a - b)
+        dist = euclidean_distance_np(self.data.xpos[self.body_id], self.final_pos)
+        #self.prev_poses.append(self.data.xpos[self.body_id])
+        #arr = np.stack(self.prev_poses)
+        #print(arr)
+        #var_per_dim = np.var(arr, axis=0, ddof=0)
+        #print(var_per_dim)
+        #print(dist)
+        #print(self.data.qpos[self.qpos_addr])
+        if dist < 0.005 and self.data.qpos[self.qpos_addr] > 0.9:
+            print("Success")
+            return True
+        else:
+            return False
 
     def modify_world(self, world_idx=None, cumulative_idx=None):
         if world_idx is None:

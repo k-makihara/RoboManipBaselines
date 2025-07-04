@@ -105,3 +105,4 @@ class TrainAct(TrainBase):
 
         # Save best checkpoint
         self.save_best_ckpt()
+    

@@ -95,6 +95,7 @@ class RolloutAct(RolloutBase):
                 reversed(self.policy_action_buf_history)
             ):
                 action += exp_weights[::-1][action_idx] * _policy_action_buf[action_idx]
+
         self.policy_action = denormalize_data(action, self.model_meta_info["action"])
         self.policy_action_list = np.concatenate(
             [self.policy_action_list, self.policy_action[np.newaxis]]

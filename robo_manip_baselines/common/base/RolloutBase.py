@@ -458,6 +458,12 @@ class RolloutBase(ABC):
         # Reset variables
         self.reset_variables()
 
+        self.phase_manager.post_update()
+
+        
+        self.phase_manager.check_transition()
+
+
     @abstractmethod
     def infer_policy(self):
         pass

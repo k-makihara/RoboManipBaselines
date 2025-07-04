@@ -144,3 +144,51 @@ class TrainMtAct(TrainBase):
 
         # Save best checkpoint
         self.save_best_ckpt()
+    
+    # def train_loop(self):
+    #     train_iter = iter(self.train_dataloader)
+    #     total_steps = self.args.num_epochs * len(self.train_dataloader) // self.args.batch_size
+    #     print(self.args.num_epochs)
+    #     print(self.args.batch_size)
+    #     print(f"Total steps = {total_steps}")
+    #     print(len(next(train_iter)))
+    #     current_step = 0
+    #     with tqdm(total=total_steps, desc="Training Steps") as pbar:
+    #         # Run train step
+    #         self.policy.train()
+
+    #         while current_step < total_steps:
+    #             batch_result_list = []
+    #             data = next(train_iter)
+    #             self.optimizer.zero_grad()
+    #             batch_result = self.policy(*[d.cuda() for d in data])
+    #             loss = batch_result["loss"]
+    #             loss.backward()
+    #             self.optimizer.step()
+    #             batch_result_list.append(self.detach_batch_result(batch_result))
+    #             self.log_epoch_summary(batch_result_list, "train", current_step)
+
+    #             # Run validation step
+
+    #             if current_step % (len(self.train_dataloader) // self.args.batch_size) == 0:
+    #                 with torch.inference_mode():
+    #                     self.policy.eval()
+    #                     batch_result_list = []
+    #                     for data in self.val_dataloader:
+    #                         batch_result = self.policy(*[d.cuda() for d in data])
+    #                         batch_result_list.append(self.detach_batch_result(batch_result))
+    #                     epoch_summary = self.log_epoch_summary(batch_result_list, "val", epoch)
+
+    #                     # Update best checkpoint
+    #                     self.update_best_ckpt(epoch_summary)
+    #                 self.policy.train()
+
+    #             # Save current checkpoint
+    #             if current_step // (len(self.train_dataloader) // self.args.batch_size) % max(self.args.num_epochs // 10, 1) == 0:
+    #                 self.save_current_ckpt(f"epoch{epoch:0>3}")
+
+    #     # Save last checkpoint
+    #     self.save_current_ckpt("last")
+
+    #     # Save best checkpoint
+    #     self.save_best_ckpt()
