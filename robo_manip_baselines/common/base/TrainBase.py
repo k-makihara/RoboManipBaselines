@@ -83,7 +83,7 @@ class TrainBase(ABC):
             type=str,
             nargs="+",
             default=[DataKey.COMMAND_JOINT_POS],
-            choices=DataKey.COMMAND_DATA_KEYS,
+            choices=DataKey.MEASURED_DATA_KEYS+DataKey.COMMAND_DATA_KEYS,
             help="action data keys",
         )
         parser.add_argument(
