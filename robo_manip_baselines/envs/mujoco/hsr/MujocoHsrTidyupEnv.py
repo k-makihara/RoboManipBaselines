@@ -23,8 +23,9 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
             #np.array([-0.5 ,-0.1, 0.0] + [0.35, -2.2, 0.0, -0.3, 0.0, 0.8]),
             **kwargs,
         )
+        self.obj = "bottle2"
 
-        self.original_obj_pos = self.model.body("bottle1").pos.copy()
+        self.original_obj_pos = self.model.body(self.obj).pos.copy()
         self.obj_pos_offsets = np.array(
             [
                 [-0.03, 0.0, 0.0],
@@ -60,7 +61,7 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
             )
 
         #self.data = mujoco.MjData(self.model)
-        self.body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "bottle1")
+        self.body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, self.obj)
         jnt_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "hand_motor_joint")
         self.qpos_addr = self.model.jnt_qposadr[jnt_id]
         self.prev_poses = deque(maxlen=5)
@@ -113,10 +114,10 @@ class MujocoHsrTidyupEnv(MujocoHsrEnvBase):
            obj_pos += np.random.uniform(
                low=-1.0 * self.world_random_scale, high=self.world_random_scale, size=3
            )
-        #self.model.body("bottle1").pos = obj_pos
+        #self.model.body(obj).pos = obj_pos
         #print(obj_pos)
         
-        body_id = mujoco.mj_name2id(self.model, mjtObj.mjOBJ_BODY, "bottle1")
+        body_id = mujoco.mj_name2id(self.model, mjtObj.mjOBJ_BODY, self.obj)
         jnt_id = self.model.body_jntadr[body_id]
         qpos_addr = self.model.jnt_qposadr[jnt_id]
 
