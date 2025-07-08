@@ -79,7 +79,7 @@ class RolloutPhase(PhaseBase):
             if self.op.terminated and (self.termination_time is None):
                 self.termination_time = elapsed_duration
 
-            post_termination_duration = 3.0  # [s]
+            post_termination_duration = 1.0  # [s]
             if self.termination_time is not None:
                 if elapsed_duration > self.termination_time + post_termination_duration:
                     print(
@@ -535,8 +535,8 @@ class RolloutBase(ABC):
 
     def print_statistics(self):
         print(f"[{self.__class__.__name__}] Statistics on policy inference")
-        policy_model_size = self.calc_model_size()
-        print(f"  - Policy model size [MB] | {policy_model_size / 1024**2:.2f}")
+        #policy_model_size = self.calc_model_size()
+        #print(f"  - Policy model size [MB] | {policy_model_size / 1024**2:.2f}")
         gpu_memory_usage = torch.cuda.max_memory_reserved()
         print(f"  - GPU memory usage [GB] | {gpu_memory_usage / 1024**3:.3f}")
         inference_duration_arr = np.array(self.inference_duration_list)

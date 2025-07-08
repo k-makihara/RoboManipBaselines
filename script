@@ -1,0 +1,2 @@
+python ./bin/Rollout.py Pi0 MujocoHsrTidyup --checkpoint /home/deepstation/rfm/ckpts/pi0/pretrained_model  --world_idx_list 1 1 1 1 --task_desc "Bring the object to the box"
+python ./bin/Rollout.py LerobotAct MujocoHsrTidyup --checkpoint /home/deepstation/rfm/ckpts/act/pretrained_model  --world_idx_list 1 1 1 1 --task_desc "Bring the object to the box"

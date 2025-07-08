@@ -39,5 +39,17 @@
       <geom type="box" size="0.005 0.15 0.06" pos="0.095 0.0 0.06" material="container"/>
       <geom type="box" size="0.005 0.15 0.06" pos="-0.095 0.0 0.06" material="container"/>
     </body>
+    <!--<body name="container_visual" pos="0.8 0.0 0.0">
+      <geom
+        name="container_interior"
+        type="box"
+        pos="0 0 0.065"
+        size="0.09 0.15 0.055"
+        rgba="0 1 0 0.3"          
+        contype="0"              
+        conaffinity="0"           
+        group="0"                 
+      />
+    </body>-->
   </worldbody>
 </mujoco>

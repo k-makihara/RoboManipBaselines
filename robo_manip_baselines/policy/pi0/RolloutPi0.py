@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Union
 
 import cv2
-import matplotlib
-matplotlib.use("TkAgg")
+# import matplotlib
+# matplotlib.use("TkAgg")
 import matplotlib.pylab as plt
-from matplotlib.backends.backend_agg import FigureCanvasTkAgg
+# from matplotlib.backends.backend_agg import FigureCanvasTkAgg
 
 import numpy as np
 from dataclasses import dataclass
@@ -29,7 +29,7 @@ class RolloutPi0(RolloutBase):
         self.print_policy_info()
         print(f"  - chunk size: {8}")
 
-        self.pi0 = PI0Policy.from_pretrained(self.args.checkpoint)
+        self.policy = PI0Policy.from_pretrained(self.args.checkpoint)
 
         #self.device = torch.device("cpu")
 
@@ -42,29 +42,30 @@ class RolloutPi0(RolloutBase):
             squeeze=False,
             constrained_layout=True,
         )
-        self.fig, self.ax = fig_ax
+        super().setup_plot(fig_ax)
+        # self.fig, self.ax = fig_ax
 
-        for _ax in np.ravel(self.ax):
-            _ax.cla()
-            _ax.axis("off")
+        # for _ax in np.ravel(self.ax):
+        #     _ax.cla()
+        #     _ax.axis("off")
 
-        plt.figure(self.policy_name)
+        # plt.figure(self.policy_name)
 
-        self.canvas = FigureCanvasAgg(self.fig)
-        self.canvas.draw()
-        plt.imshow(
-            cv2.cvtColor(np.asarray(self.canvas.buffer_rgba()), cv2.COLOR_RGB2BGR)
-        )
+        # self.canvas = FigureCanvasAgg(self.fig)
+        # self.canvas.draw()
+        # plt.imshow(
+        #     cv2.cvtColor(np.asarray(self.canvas.buffer_rgba()), cv2.COLOR_RGB2BGR)
+        # )
 
-        if self.args.win_xy_plot is not None:
-            plt.get_current_fig_manager().window.wm_geometry("+20+50")
+        # if self.args.win_xy_plot is not None:
+        #     plt.get_current_fig_manager().window.wm_geometry("+20+50")
 
-        if len(self.action_keys) > 0:
-            self.action_plot_scale = np.concatenate(
-                [DataKey.get_plot_scale(key, self.env) for key in self.action_keys]
-            )
-        else:
-            self.action_plot_scale = np.zeros(0)
+        # if len(self.action_keys) > 0:
+        #     self.action_plot_scale = np.concatenate(
+        #         [DataKey.get_plot_scale(key, self.env) for key in self.action_keys]
+        #     )
+        # else:
+        #     self.action_plot_scale = np.zeros(0)
 
     def setup_model_meta_info(self):
         cmd_args = " ".join(sys.argv).lower()
@@ -103,7 +104,7 @@ class RolloutPi0(RolloutBase):
         for camera_name in self.camera_names:
             observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
 
-        action = self.pi0.select_action(observation)
+        action = self.policy.select_action(observation)
         action = torch.squeeze(action)
 
         self.policy_action = action.cpu().detach().numpy().astype(np.float64)
@@ -135,6 +136,11 @@ class RolloutPi0(RolloutBase):
             images[camera_name] = image
 
         return images
+    
+    def reset_variables(self):
+        super().reset_variables()
+
+        self.policy.reset()
 
     def draw_plot(self):
         # Clear plot
@@ -152,50 +158,54 @@ class RolloutPi0(RolloutBase):
 
         # Finalize plot
         self.canvas.draw()
-        plt.imshow(
-            cv2.cvtColor(np.asarray(self.canvas.buffer_rgba()), cv2.COLOR_RGB2BGR)
+        # plt.imshow(
+        #     cv2.cvtColor(np.asarray(self.canvas.buffer_rgba()), cv2.COLOR_RGB2BGR)
+        # )
+        cv2.imshow(
+            self.policy_name,
+            cv2.cvtColor(np.asarray(self.canvas.buffer_rgba()), cv2.COLOR_RGB2BGR),
         )
 
-    def run(self):
-        self.reset_flag = True
-        self.quit_flag = False
-        self.inference_duration_list = []
+    # def run(self):
+    #     self.reset_flag = True
+    #     self.quit_flag = False
+    #     self.inference_duration_list = []
 
-        self.motion_manager.reset()
+    #     self.motion_manager.reset()
 
-        self.obs, self.info = self.env.reset(seed=self.args.seed)
+    #     self.obs, self.info = self.env.reset(seed=self.args.seed)
 
-        self.time = 0
-        self.key = 0
+    #     self.time = 0
+    #     self.key = 0
 
-        while True:
-            if self.reset_flag:
-                self.reset()
-                self.reset_flag = False
+    #     while True:
+    #         if self.reset_flag:
+    #             self.reset()
+    #             self.reset_flag = False
 
-            self.phase_manager.pre_update()
+    #         self.phase_manager.pre_update()
 
-            env_action = np.concatenate(
-                [
-                    self.motion_manager.get_command_data(key)
-                    for key in self.env.unwrapped.command_keys_for_step
-                ]
-            )
-            self.obs, self.reward, self.terminated, _, self.info = self.env.step(
-                env_action
-            )
+    #         env_action = np.concatenate(
+    #             [
+    #                 self.motion_manager.get_command_data(key)
+    #                 for key in self.env.unwrapped.command_keys_for_step
+    #             ]
+    #         )
+    #         self.obs, self.reward, self.terminated, _, self.info = self.env.step(
+    #             env_action
+    #         )
 
-            self.phase_manager.post_update()
+    #         self.phase_manager.post_update()
 
-            self.time += 1
-            self.phase_manager.check_transition()
+    #         self.time += 1
+    #         self.phase_manager.check_transition()
 
-            if self.quit_flag:
-                break
+    #         if self.quit_flag:
+    #             break
 
-        if self.args.result_filename is not None:
-            print(
-                f"[{self.__class__.__name__}] Save the rollout results: {self.args.result_filename}"
-            )
-            with open(self.args.result_filename, "w") as result_file:
-                yaml.dump(self.result, result_file)
+    #     if self.args.result_filename is not None:
+    #         print(
+    #             f"[{self.__class__.__name__}] Save the rollout results: {self.args.result_filename}"
+    #         )
+    #         with open(self.args.result_filename, "w") as result_file:
+    #             yaml.dump(self.result, result_file)
