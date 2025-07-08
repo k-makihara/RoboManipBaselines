@@ -178,10 +178,15 @@ class RealUR5eEnvBase(RealEnvBase):
         self.rtde_c.waitPeriod(period)
 
         # Send command to Robotiq gripper
+        #print(action.shape)
+        #print(self.body_config_list[0].gripper_joint_idxes)
         gripper_pos = action[self.body_config_list[0].gripper_joint_idxes][0]
-        speed = 50
-        force = 10
+        speed = 255
+        force = 125
+        #gripper_pos_norm = (gripper_pos + 3) / 113 * 255
         self.gripper.move(int(gripper_pos), speed, force)
+        #self.gripper.move(int(gripper_pos_norm), speed, force)
+        #print(int(gripper_pos))
 
         # Wait
         elapsed_duration = time.time() - start_time
