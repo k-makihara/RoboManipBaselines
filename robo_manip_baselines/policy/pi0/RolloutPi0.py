@@ -13,9 +13,10 @@ import numpy as np
 from dataclasses import dataclass
 import torch
 import yaml
+import time
 
 # sys.path.append(os.path.join(os.path.dirname(__file__), "/home/deepstation/lerobot"))
-from lerobot.common.policies.pi0.modeling_pi0 import PI0Policy
+from lerobot.policies.pi0.modeling_pi0 import PI0Policy
 
 from robo_manip_baselines.common import RolloutBase, denormalize_data
 from robo_manip_baselines.common.data.DataKey import DataKey
@@ -32,6 +33,10 @@ class RolloutPi0(RolloutBase):
         self.policy = PI0Policy.from_pretrained(self.args.checkpoint)
 
         #self.device = torch.device("cpu")
+        print("warm up policy")
+        self.warnup_time = time.time()
+        self.flag = True
+        self.warmup_count = 0
 
     def setup_plot(self):
         fig_ax = plt.subplots(
@@ -69,9 +74,12 @@ class RolloutPi0(RolloutBase):
 
     def setup_model_meta_info(self):
         cmd_args = " ".join(sys.argv).lower()
-        self.state_keys = ["measured_joint_pos", "measured_mobile_omni_vel"]
-        self.action_keys = ["command_joint_pos", "command_mobile_omni_vel"]
-        self.camera_names = ["head", "hand"]
+        #self.state_keys = ["measured_joint_pos", "measured_mobile_omni_vel"]
+        #self.action_keys = ["command_joint_pos", "command_mobile_omni_vel"]
+        #self.camera_names = ["head", "hand"]
+        self.state_keys = ["measured_joint_pos"]
+        self.action_keys = ["command_joint_pos"]
+        self.camera_names = ["front", "hand"]
         if "aloha" in cmd_args:
             self.state_dim = 14
             self.action_dim = 14
@@ -79,8 +87,11 @@ class RolloutPi0(RolloutBase):
             self.state_dim = 7
             self.action_dim = 7
         else:
-            self.state_dim = 9
-            self.action_dim = 9
+            self.state_dim = 7
+            self.action_dim = 7
+            #self.state_dim = 9
+            #self.action_dim = 9
+
 
         if self.args.skip is None:
             self.args.skip = 1
@@ -89,25 +100,51 @@ class RolloutPi0(RolloutBase):
 
     def infer_policy(self):
         # Infer
+        if time.time() - self.warnup_time >= 20.0 and self.flag is True:
+            state = self.get_state()
+            state = state[np.newaxis]
+            state = torch.from_numpy(state.copy()).to("cuda:0")
+            state = state.type(torch.float32)
 
-        state = self.get_state()
-        state = state[np.newaxis]
-        state = torch.from_numpy(state.copy()).to("cuda:0")
-        state = state.type(torch.float32)
+            images = self.get_images()
 
-        images = self.get_images()
+            observation = {
+                "observation.state": state,
+                "task": [self.args.task_desc],
+            }
+            for camera_name in self.camera_names:
+                observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
 
-        observation = {
-            "observation.state": state,
-            "task": [self.args.task_desc],
-        }
-        for camera_name in self.camera_names:
-            observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
+            action = self.policy.select_action(observation)
+            action = torch.squeeze(action)
 
-        action = self.policy.select_action(observation)
-        action = torch.squeeze(action)
+            self.policy_action = action.cpu().detach().numpy().astype(np.float64)
+            self.warmup_count += 1
+            if self.warmup_count > 50:
+                self.flag = False
+        elif time.time() - self.warnup_time >= 20.0:
+            #print("Infer")
+            state = self.get_state()
+            state = state[np.newaxis]
+            state = torch.from_numpy(state.copy()).to("cuda:0")
+            state = state.type(torch.float32)
 
-        self.policy_action = action.cpu().detach().numpy().astype(np.float64)
+            images = self.get_images()
+
+            observation = {
+                "observation.state": state,
+                "task": [self.args.task_desc],
+            }
+            for camera_name in self.camera_names:
+                observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
+
+            action = self.policy.select_action(observation)
+            action = torch.squeeze(action)
+
+            self.policy_action = action.cpu().detach().numpy().astype(np.float64)
+        else:
+            #print(self.get_state())
+            self.policy_action = self.get_state()
         self.policy_action_list = np.concatenate(
             [self.policy_action_list, self.policy_action[np.newaxis]]
         )
