@@ -31,3 +31,10 @@ success:
 - true
 - true
 - true
+statistics:
+  - GPU memory usage [GB]: 7.189
+  - Inference duration:
+    - mean: 1.68e-02
+    - std: 5.83e-02
+    - min: 6.14e-03
+    - max: 7.21e-01

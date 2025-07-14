@@ -39,7 +39,7 @@ def main():
         type=str,
         nargs="?",
         default=None,
-        choices=["Mlp", "Sarnn", "Act", "MtAct", "DiffusionPolicy", "Pi0", "LerobotAct"],
+        choices=["Mlp", "Sarnn", "Act", "MtAct", "DiffusionPolicy", "Pi0", "LerobotAct","JaxPi0"],
         help="policy",
     )
     parser.add_argument(
@@ -96,7 +96,6 @@ def main():
     else:
         with open(args.config, "r") as f:
             config = yaml.safe_load(f)
-
     rollout = Rollout(**config)
     rollout.run()
 

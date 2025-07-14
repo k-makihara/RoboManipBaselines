@@ -1,5 +1,7 @@
 import os
 import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "/home/deepstation/anaconda3/envs/rmb/lib/python3.10/site-packages"))
+
 from pathlib import Path
 from typing import Union
 
@@ -14,14 +16,18 @@ from dataclasses import dataclass
 import torch
 import yaml
 
-# sys.path.append(os.path.join(os.path.dirname(__file__), "/home/deepstation/lerobot"))
-from lerobot.common.policies.pi0.modeling_pi0 import PI0Policy
+from collections import deque
+import torch
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "/home/deepstation/rfm/hsr_openpi/src"))
+from openpi.training import config
+from openpi.policies import policy_config
 
 from robo_manip_baselines.common import RolloutBase, denormalize_data
 from robo_manip_baselines.common.data.DataKey import DataKey
 
 
-class RolloutPi0(RolloutBase):
+class RolloutJaxPi0(RolloutBase):
     require_task_desc = True
 
     def setup_policy(self):
@@ -29,7 +35,15 @@ class RolloutPi0(RolloutBase):
         self.print_policy_info()
         print(f"  - chunk size: {8}")
 
-        self.policy = PI0Policy.from_pretrained(self.args.checkpoint)
+        adopted_action_chunks = 50
+        config_name = "pi0_sim-hsr_low_mem_finetune"
+
+        self.config: config.TrainConfig = config.get_config(config_name)
+        self.policy = policy_config.create_trained_policy(self.config, self.args.checkpoint)
+
+        self.adopted_action_chunks = adopted_action_chunks
+        self.action_queue: deque = deque(maxlen=adopted_action_chunks)
+        print("Finish Loading")
 
         #self.device = torch.device("cpu")
 
@@ -90,29 +104,53 @@ class RolloutPi0(RolloutBase):
     def infer_policy(self):
         # Infer
 
-        state = self.get_state()
-        state = state[np.newaxis]
-        state = torch.from_numpy(state.copy()).to("cuda:0")
-        state = state.type(torch.float32)
+        if len(self.action_queue) == 0:
+            state = self.get_state()
+            state = state[np.newaxis]
+            state = torch.from_numpy(state.copy()).to("cuda:0")
+            state = state.type(torch.float32)
 
-        images = self.get_images()
+            images = self.get_images()
 
-        observation = {
-            "observation.state": state,
-            "task": [self.args.task_desc],
-        }
-        for camera_name in self.camera_names:
-            observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
+            # observation = {
+            #     "observation.state": state,
+            #     "task": [self.args.task_desc],
+            # }
+            # for camera_name in self.camera_names:
+            #     observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
 
-        action = self.policy.select_action(observation)
-        action = torch.squeeze(action)
+            # action = self.policy.select_action(observation)
+            # action = torch.squeeze(action)
 
-        self.policy_action = action.cpu().detach().numpy().astype(np.float64)
+            # self.policy_action = action.cpu().detach().numpy().astype(np.float64)
+            # self.policy_action_list = np.concatenate(
+            #     [self.policy_action_list, self.policy_action[np.newaxis]]
+            # )
+
+
+            policy_input = {
+                "head_rgb": images["head"],
+                "hand_rgb": images["hand"],
+                "state": state,
+                "prompt": self.args.task_desc,
+            }
+            #print("Input")
+
+            action_chunk = self.policy.infer(policy_input)["actions"]
+            action = np.expand_dims(action_chunk, axis=0)
+            #print(action.shape)
+            self.action_queue.extend(action_chunk.transpose(0, 1))
+        
+        self.policy_action = self.action_queue.popleft()
         self.policy_action_list = np.concatenate(
             [self.policy_action_list, self.policy_action[np.newaxis]]
         )
         #print(self.policy_action.shape)
         #print(self.policy_action_list.shape)
+        
+        #self.action_queue.extend(action_chunk[1 : self.adopted_action_chunks])
+        #action = action_chunk[0]
+
 
     def get_state(self):
         if len(self.state_keys) == 0:
@@ -143,6 +181,7 @@ class RolloutPi0(RolloutBase):
         super().reset_variables()
 
         self.policy.reset()
+        self._action_queue = deque([], maxlen=self.adopted_action_chunks)
 
     def draw_plot(self):
         # Clear plot
