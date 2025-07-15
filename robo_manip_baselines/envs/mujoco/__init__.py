@@ -20,5 +20,6 @@ from .aloha.MujocoAlohaCableEnv import MujocoAlohaCableEnv
 from .hsr.MujocoHsrTidyupEnv import MujocoHsrTidyupEnv
 from .hsr.MujocoHsrPaPEnv import MujocoHsrPaPEnv
 from .hsr.MujocoHsrShelfPaPEnv import MujocoHsrShelfPaPEnv
+from .hsr.MujocoHsrShelfRealPaPEnv import MujocoHsrShelfRealPaPEnv
 
 from .g1.MujocoG1BottlesEnv import MujocoG1BottlesEnv

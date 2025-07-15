@@ -6,7 +6,7 @@ from .MujocoHsrPaPEnvBase import MujocoHsrEnvBase
 import mujoco
 from mujoco import mjtObj
 
-class MujocoHsrShelfPaPEnv(MujocoHsrEnvBase):
+class MujocoHsrShelfRealPaPEnv(MujocoHsrEnvBase):
     default_camera_config = {
         "azimuth": -30.0,
         "elevation": -30.0,
@@ -22,7 +22,7 @@ class MujocoHsrShelfPaPEnv(MujocoHsrEnvBase):
             self,
             path.join(
                 path.dirname(__file__),
-                "../../assets/mujoco/envs/hsr/env_hsr_shelfpap.xml",
+                "../../assets/mujoco/envs/hsr/env_hsr_shelfrealpap.xml",
             ),
             #np.array([0.0] * 3 + [0.25, -2.0, 0.0, -1.0, 0.0, 0.8]),
             #np.array([-0.5 ,-0.1, 0.0] + [0.35, -2.2, 0.0, -0.3, 0.0, 0.8]),

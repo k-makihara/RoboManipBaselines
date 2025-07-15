@@ -1,0 +1,130 @@
+<mujoco model="hsr_tidyup">
+  <include file="./env_hsr_common.xml"/>
+
+  <include file="../../../../../../third_party/YCB_sim/includes/defaults_ycb.xml"/>
+  <include file="../../../../../../third_party/YCB_sim/includes/assets_002_master_chef_can.xml"/>
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_003_cracker_box.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_004_sugar_box.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_005_tomato_soup_can.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_006_mustard_bottle.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_007_tuna_fish_can.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_008_pudding_box.xml"/> -->
+  <!--<include file="../../../../../../third_party/YCB_sim/includes/assets_009_gelatin_box.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_010_potted_meat_can.xml"/> -->
+  <!-- <include file="../../../../../../third_party/YCB_sim/includes/assets_035_power_drill.xml"/> -->
+
+  <asset>
+    <texture name="bottle" file="general/metal2.png" type="cube"/>
+    <material name="bottle1" texture="bottle" rgba="0.1 0.5 0.8 1.0" specular="1.0" shininess="1.0"/>
+    <material name="bottle2" texture="bottle" rgba="0.8 0.1 0.5 1.0" specular="1.0" shininess="1.0"/>
+    <texture name="container1" type="cube" file="general/wood1.png"/>
+    <material name="container1" texture="container1" rgba="0.1 0.5 0.1 1.0" specular="0.2" shininess="0.3"/>
+    <material name="container2" texture="container1" rgba="0.5 0.1 0.1 1.0" specular="0.2" shininess="0.3"/>
+     <material name="container3" texture="container1" rgba="0.5 0.5 0.1 1.0" specular="0.2" shininess="0.3"/>
+  </asset>
+
+  <include file="../../robots/hsr/hsr_config.xml"/>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true" diffuse="0.3 0.3 0.3"/>
+
+    <geom name="floor" size="0 0 0.05" type="plane" material="floor" pos="0 0 0.0"/>
+
+    <geom name="wall1" type="box" size="10 10 0.01" pos="10 0 10" zaxis="1 0 0" material="wall"/>
+    <geom name="wall2" type="box" size="10 10 0.01" pos="-10 0 10" zaxis="1 0 0" material="wall"/>
+    <geom name="wall3" type="box" size="10 10 0.01" pos="0 10 10" zaxis="0 1 0" material="wall"/>
+    <geom name="wall4" type="box" size="10 10 0.01" pos="0 -10 10" zaxis="0 1 0" material="wall"/>
+
+    <include file="../../robots/hsr/hsr_body.xml"/>
+
+
+    <body name="bottle1" pos="0.5 -0.3 0.68" euler="1.5708 -1.5708 0">
+      <freejoint/>
+      <include file="../../../../../../third_party/YCB_sim/includes/body_002_master_chef_can.xml" />
+    </body>
+
+
+    <body name="shelf1" pos="0.5 -0.3 0.0" euler="0 0 1.5708">
+      <!-- 上段棚板 -->
+      <geom name="shelf_top1" type="box"
+            size="0.3 0.15 0.005"  
+            pos="0 0 1.1"           
+            material="container1"/>
+
+      <!-- 中段棚板 -->
+      <geom name="shelf_middle1" type="box"
+            size="0.3 0.15 0.005"
+            pos="0 0 0.6"           
+            material="container1"/>
+
+      <!-- 底板 -->
+      <geom name="shelf_bottom1" type="box"
+            size="0.3 0.15 0.005"
+            pos="0 0 0.08"         
+            material="container1"/>
+
+      <!-- 背面パネル -->
+      <geom name="back_panel1" type="box"
+            size="0.3 0.005 0.7"     
+            pos="0 -0.155 0.7"        
+            material="container1"/>
+
+      <!-- 支柱（２本） -->
+      <!-- 左前支柱 -->
+      <!--<geom name="leg_lf" type="box"
+            size="0.005 0.005 0.3"   
+            pos="-0.295 0.145 0.3"   
+            material="container1"/>-->
+
+      <!-- 右前支柱 -->
+      <!--<geom name="leg_rf" type="box"
+            size="0.005 0.005 0.3"
+            pos=" 0.295 0.145 0.3"
+            material="container1"/>-->
+    </body>
+    <body name="shelf2" pos="0.5 0.3 0.0" euler="0 0 1.5708">
+      <!-- 上段棚板 -->
+      <geom name="shelf_top2" type="box"
+            size="0.3 0.15 0.005"  
+            pos="0 0 1.1"           
+            material="container2"/>
+
+      <!-- 中段棚板 -->
+      <geom name="shelf_middle2" type="box"
+            size="0.3 0.15 0.005"
+            pos="0 0 0.6"           
+            material="container2"/>
+
+      <!-- 底板 -->
+      <geom name="shelf_bottom2" type="box"
+            size="0.3 0.15 0.005"
+            pos="0 0 0.08"         
+            material="container2"/>
+
+      <!-- 背面パネル -->
+      <geom name="back_panel2" type="box"
+            size="0.3 0.005 0.7"     
+            pos="0 -0.155 0.7"        
+            material="container2"/>
+
+      <!-- 支柱（２本） -->
+      <!-- 左前支柱 -->
+      <!--<geom name="leg_lf" type="box"
+            size="0.005 0.005 0.3"   
+            pos="-0.295 0.145 0.3"   
+            material="container1"/>-->
+
+      <!-- 右前支柱 -->
+      <!--<geom name="leg_rf" type="box"
+            size="0.005 0.005 0.3"
+            pos=" 0.295 0.145 0.3"
+            material="container1"/>-->
+    </body>
+    <body name="panel" pos="0.5 0 0.68" euler="0 0 0">
+      <geom size="0.15 0.005 0.7" 
+            type="box"    
+            pos="0 0 0.0"        
+            material="container3"/>
+    </body>
+  </worldbody>
+</mujoco>
