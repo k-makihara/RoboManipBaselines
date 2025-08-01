@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pinocchio as pin
 import torch
-
+from typing import List
 
 def set_random_seed(seed):
     """Set random seed."""
@@ -44,3 +44,16 @@ def get_rel_pose_from_se3(se3):
 def get_se3_from_rel_pose(rel_pose):
     """Get pinocchio SE3 from relative pose (tx, ty, tz, roll, pitch, yaw)."""
     return pin.SE3(pin.rpy.rpyToMatrix(rel_pose[3:6]), rel_pose[0:3])
+
+def rel_pose_eef_to_se3(prev_se3: pin.SE3, rel_pose: List[float]) -> pin.SE3:
+    """
+    EEF ローカル座標系で表現された相対姿勢 rel_pose を、
+    ベース座標系での SE3 コマンドに変換して返す。
+    prev_se3 : pin.SE3   
+    rel_pose : 長さ6のリスト [x, y, z, roll, pitch, yaw]
+    """
+    t_rel = np.array(rel_pose[0:3], dtype=float)
+    R_rel = pin.rpy.rpyToMatrix(*rel_pose[3:6])
+    T_rel = pin.SE3(R_rel, t_rel)
+
+    return prev_se3 * T_rel
