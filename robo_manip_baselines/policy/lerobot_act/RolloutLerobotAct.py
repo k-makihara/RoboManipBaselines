@@ -26,7 +26,7 @@ class RolloutLerobotAct(RolloutBase):
     def setup_policy(self):
         # Print policy information
         self.print_policy_info()
-        print(f"  - chunk size: {8}")
+        print(f"  - chunk size: {100}")
 
         self.pi0 = ACTPolicy.from_pretrained(self.args.checkpoint)
 

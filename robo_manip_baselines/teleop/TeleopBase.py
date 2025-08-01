@@ -400,6 +400,8 @@ class TeleopBase(ABC):
                 self.record_data()
 
             self.obs, self.reward, _, _, self.info = self.env.step(action)
+            print(self.obs)
+            print(action)
 
             self.draw_image()
 

@@ -1,45 +1,59 @@
 import os
 import sys
-import copy
 from pathlib import Path
 from typing import Union
 
 import cv2
+import matplotlib.pylab as plt
+# from matplotlib.backends.backend_agg import FigureCanvasAgg
 # import matplotlib
 # matplotlib.use("TkAgg")
-import matplotlib.pylab as plt
-import time
-# from matplotlib.backends.backend_agg import FigureCanvasTkAgg 
-
 import numpy as np
 from dataclasses import dataclass
 import torch
 import yaml
+from collections import deque
 
-# sys.path.append(os.path.join(os.path.dirname(__file__), "/home/deepstation/lerobot"))
-from lerobot.common.policies.pi0.modeling_pi0 import PI0Policy
+
+
+
+
+sys.path.append("/home/deepstation/Isaac-GR00T")
+from gr00t.experiment.data_config import DATA_CONFIG_MAP
+from gr00t.model.policy import Gr00tPolicy
 
 from robo_manip_baselines.common import RolloutBase, denormalize_data
 from robo_manip_baselines.common.data.DataKey import DataKey
 
 
-class RolloutPi0(RolloutBase):
+class RolloutGr00t(RolloutBase):
     require_task_desc = True
 
     def setup_policy(self):
         # Print policy information
         self.print_policy_info()
-        print(f"  - chunk size: {8}")
+        
 
-        self.policy = PI0Policy.from_pretrained(self.args.checkpoint)
-        torch.backends.cudnn.benchmark = True
+        # get the data config
+        self.data_config = DATA_CONFIG_MAP["hsrrmb"]
+
+        # get the modality configs and transforms
+        modality_config = self.data_config.modality_config()
+        transforms = self.data_config.transform()
+
+        self.gr00t = Gr00tPolicy(
+            model_path=self.args.checkpoint,
+            modality_config=modality_config,
+            modality_transform=transforms,
+            embodiment_tag="new_embodiment",
+            device="cuda"
+        )
+        adopted_action_chunks = 16
+        print(f"  - chunk size: {adopted_action_chunks}")
+        self.adopted_action_chunks = adopted_action_chunks
+        self.action_queue: deque = deque(maxlen=adopted_action_chunks)
 
         #self.device = torch.device("cpu")
-        #self.dummy_action = np.array([ 3.14159265, -1.25663706, -2.04203522, -0.78539816,  1.57079633,  1.57079633, 0.        ])
-        self.dummy_action = np.array([ 3.36976147, -1.72659934, -2.15703249, -0.27422237,  1.36941695,  1.77591693,  0.        ])
-        self.dummy_action_time = 5.0
-        self.start = time.time()
-        self.debug = True
 
     def setup_plot(self):
         fig_ax = plt.subplots(
@@ -50,7 +64,6 @@ class RolloutPi0(RolloutBase):
             squeeze=False,
             constrained_layout=True,
         )
-        super().setup_plot(fig_ax)
         # self.fig, self.ax = fig_ax
 
         # for _ax in np.ravel(self.ax):
@@ -58,11 +71,6 @@ class RolloutPi0(RolloutBase):
         #     _ax.axis("off")
 
         # plt.figure(self.policy_name)
-
-        ##[ 3.14159265 -1.25663706 -2.04203522 -0.78539816  1.57079633  1.57079633 0.        ]
-        #dummy
-        #[ 3.14159265 -1.25663706 -2.04203522 -0.78539816  1.57079633  1.57079633  0.        ]
-        #[ 3.36976147 -1.72659934 -2.15703249 -0.27422237  1.36941695  1.77591693  0.        ]
 
         # self.canvas = FigureCanvasAgg(self.fig)
         # self.canvas.draw()
@@ -80,23 +88,26 @@ class RolloutPi0(RolloutBase):
         # else:
         #     self.action_plot_scale = np.zeros(0)
 
+    def reset_variables(self):
+        super().reset_variables()
+
     def setup_model_meta_info(self):
         cmd_args = " ".join(sys.argv).lower()
-        #self.state_keys = ["measured_joint_pos", "measured_mobile_omni_vel"]
-        #self.action_keys = ["command_joint_pos", "command_mobile_omni_vel"]
-        #self.camera_names = ["head", "hand"]
-        self.state_keys = ["measured_joint_pos"]
-        self.action_keys = ["command_joint_pos"]
-        self.camera_names = ["front", "side", "hand"]
         if "aloha" in cmd_args:
+            data_config = DATA_CONFIG_MAP["aloha"]
             self.state_dim = 14
             self.action_dim = 14
-        elif "UR5e" in cmd_args:
+        elif "ur5e" in cmd_args:
+            data_config = DATA_CONFIG_MAP["ur5e"]
             self.state_dim = 7
             self.action_dim = 7
         else:
-            self.state_dim = 7
-            self.action_dim = 7
+            data_config = DATA_CONFIG_MAP["hsrrmb"]
+            self.state_dim = 9
+            self.action_dim = 9
+        self.state_keys = ["measured_joint_pos", "measured_mobile_omni_vel"]
+        self.action_keys = ["command_joint_pos", "command_mobile_omni_vel"]
+        self.camera_names = ["head", "hand"]
 
         if self.args.skip is None:
             self.args.skip = 1
@@ -105,61 +116,40 @@ class RolloutPi0(RolloutBase):
 
     def infer_policy(self):
         # Infer
-        inference_start = time.time() - self.start
-        #print(self.get_state())
-        if inference_start < (5.0 + self.dummy_action_time):
-        #if inference_start < 0.0:
-            if self.debug:
-                state = self.get_state()
-                state = state[np.newaxis]
-                state = torch.from_numpy(state.copy()).to("cuda:0")
-                state = state.type(torch.float32)
 
-                images = self.get_images()
-                #print(state.shape)
-
-                observation = {
-                    "observation.state": state,
-                    "task": [self.args.task_desc],
-                }
-                for camera_name in self.camera_names:
-                    observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
-                    #print(images[camera_name].shape)
-
-                for i in range(50):
-                    action = self.policy.select_action(observation)
-                action = torch.squeeze(action)
-                self.debug = False
-
-            self.policy_action = copy.copy(self.dummy_action)
-
-        else:
+        if len(self.action_queue) == 0:
             state = self.get_state()
             state = state[np.newaxis]
-            state = torch.from_numpy(state.copy()).to("cuda:0")
-            state = state.type(torch.float32)
+            #print(np.array([state[0][0:5]]))
+            #print(np.array([state[0][5]]))
+            #print(np.array([state[0][6:9]]))
 
             images = self.get_images()
-            #print(state.shape)
 
             observation = {
-                "observation.state": state,
-                "task": [self.args.task_desc],
+                "state.arm": np.array([state[0][0:5]]),
+                "state.gripper": np.array([[state[0][5]]]),
+                "state.base": np.array([state[0][6:9]]),
+                "annotation.human.action.task_description": [self.args.task_desc]
             }
             for camera_name in self.camera_names:
-                observation[f"observation.images.{camera_name}_rgb"] = images[camera_name]
-                #print(images[camera_name].shape)
+                observation[f"video.{camera_name}_rgb"] = images[camera_name]
 
-            action = self.policy.select_action(observation)
-            action = torch.squeeze(action)
+            all_actions = self.gr00t.get_action(observation)
 
-            self.policy_action = action.cpu().detach().numpy().astype(np.float64)
-        #print(self.policy_action)
+            policy_action_arm = all_actions["action.arm"]
+            policy_action_gripper = np.expand_dims(all_actions["action.gripper"],axis=-1)
+            policy_action_base = all_actions["action.base"]
+            policy_action = np.concatenate([policy_action_arm, policy_action_gripper, policy_action_base], axis=1)
+
+            #action = np.expand_dims(policy_action, axis=0)
+            self.action_queue.extend(policy_action.transpose(0, 1))
+
+        
+        self.policy_action = self.action_queue.popleft()
         self.policy_action_list = np.concatenate(
             [self.policy_action_list, self.policy_action[np.newaxis]]
         )
-        #print(self.policy_action.shape)
-        #print(self.policy_action_list.shape)
 
     def get_state(self):
         if len(self.state_keys) == 0:
@@ -178,18 +168,10 @@ class RolloutPi0(RolloutBase):
         # Assume all images are the same size
         images = {}
         for camera_name in self.camera_names:
-            image = self.info["rgb_images"][camera_name][np.newaxis].transpose(0, 3, 1, 2)
-            image = torch.from_numpy(image.copy()).to("cuda:0")
-            image = image.type(torch.float32)
-            image /= 255
+            image = self.info["rgb_images"][camera_name][np.newaxis]
             images[camera_name] = image
 
         return images
-    
-    def reset_variables(self):
-        super().reset_variables()
-
-        self.policy.reset()
 
     def draw_plot(self):
         # Clear plot
@@ -231,7 +213,7 @@ class RolloutPi0(RolloutBase):
     #         if self.reset_flag:
     #             self.reset()
     #             self.reset_flag = False
-
+                
     #         self.phase_manager.pre_update()
 
     #         env_action = np.concatenate(

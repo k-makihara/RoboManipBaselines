@@ -234,7 +234,7 @@ class RolloutBase(ABC):
         parser.add_argument(
             "--max_duration",
             type=float,
-            default=30.0,
+            default=100.0,
             help=(
                 "maximum rollout duration for automatic exit [s] "
                 "(used only when '--auto_exit' option is enabled)"

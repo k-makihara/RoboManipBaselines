@@ -22,7 +22,7 @@ class TrainAct(TrainBase):
         parser.set_defaults(image_aug_std=0.1)
 
         parser.set_defaults(batch_size=8)
-        parser.set_defaults(num_epochs=1000)
+        parser.set_defaults(num_epochs=3000)
         parser.set_defaults(lr=1e-5)
 
         parser.add_argument("--kl_weight", type=int, default=10, help="KL weight")
