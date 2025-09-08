@@ -240,7 +240,8 @@ def populate_dataset(
         elif "MujocoUR5eDoor" in raw_file_string:
             task = "open the door"
         elif "MujocoHsrTidyup" in raw_file_string:
-            task = "Bring the object to the box"
+            #task = "Bring the object to the box"
+            task = "Pick up from the green box and put it in the red box"
 
         imgs_per_cam, state, action, velocity, effort = load_raw_episode_data(ep_path)
         num_frames = state.shape[0]

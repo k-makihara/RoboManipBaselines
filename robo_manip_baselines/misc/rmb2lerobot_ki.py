@@ -3,7 +3,9 @@ Script to convert UR5e hdf5 data to the LeRobot dataset v2.0 format.
 
 Example usage: uv run examples/aloha_real/convert_aloha_data_to_lerobot.py --raw-dir /path/to/raw/data --repo-id <org>/<dataset-name>
 """
-
+#float 32 ->64
+#fps 50 -> 30
+# lerobot 1.0->2.1
 import dataclasses
 from pathlib import Path
 import shutil
@@ -45,16 +47,17 @@ def create_empty_dataset(
     dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
 ) -> LeRobotDataset:
     motors = [
-        "shoulder_pan_joint",
-        "shoulder_lift_joint",
-        "elbow_joint",
-        "wrist_1_joint",
-        "wrist_2_joint",
-        "wrist_3_joint",
+        "base",
+        "shoulder",
+        "elbow",
+        "wrist_1",
+        "wrist_2",
+        "wrist_3",
         "gripper",
     ]
     cameras = [
         "front_rgb",
+        "side_rgb",
         "hand_rgb",
     ]
 
@@ -178,28 +181,26 @@ def load_raw_images_per_camera_from_mp4(ep_path: Path, cameras: list[str]) -> di
 def load_raw_episode_data(
     ep_path: Path,
 ) -> tuple[dict[str, np.ndarray], torch.Tensor, torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
-    skip = 3
     with h5py.File(ep_path, "r") as ep:
-        state_all = ep["/measured_joint_pos"][::skip]
-
-        action_all = ep["/command_joint_pos"][::skip]
-
-        state = torch.from_numpy(state_all)
-        action = torch.from_numpy(action_all)
+        state = torch.from_numpy(ep["/measured_joint_pos"][:])
+        action = torch.from_numpy(ep["/command_joint_pos"][:])
 
         velocity = None
         if "/measured_joint_vel" in ep:
-            velocity_all = ep["/measured_joint_vel"][::skip]
-            velocity = torch.from_numpy(velocity_all)
+            velocity = torch.from_numpy(ep["/measured_joint_vel"][:])
 
         effort = None
         if "/effort" in ep:
-            effort = torch.from_numpy(ep["/effort"][::skip])
+            effort = torch.from_numpy(ep["/effort"][:])
 
-        imgs_per_cam = {}
-        imgs_per_cam["front_rgb"] = ep["/front_rgb_image"][::skip]
-        imgs_per_cam["hand_rgb"] = ep["/hand_rgb_image"][::skip]
-
+    imgs_per_cam = load_raw_images_per_camera_from_mp4(
+        ep_path,
+        [
+            "front_rgb",
+            "side_rgb",
+            "hand_rgb",
+        ],
+    )
 
     return imgs_per_cam, state, action, velocity, effort
 
@@ -215,7 +216,7 @@ def populate_dataset(
 
     for ep_idx in tqdm.tqdm(episodes):
         ep_path = hdf5_files[ep_idx]
-        raw_file_string = ep_path.parents[0].name
+        raw_file_string = ep_path.parents[1].name
         if "MujocoUR5eCable" in raw_file_string:
             task = "pass the cable between two poles"
         elif "MujocoUR5eRing" in raw_file_string:
@@ -226,10 +227,6 @@ def populate_dataset(
             task = "roll up the cloth"
         elif "MujocoUR5eDoor" in raw_file_string:
             task = "open the door"
-        elif "MujocoHsrTidyup" in raw_file_string:
-            task = "Bring the object to the box"
-        elif "RealUR5eDemo" in raw_file_string:
-            task = "Bring the snack to the box"
 
         imgs_per_cam, state, action, velocity, effort = load_raw_episode_data(ep_path)
         num_frames = state.shape[0]
@@ -252,6 +249,9 @@ def populate_dataset(
                     "video": {
                         "front_rgb": {
                             "original_key": "observation.images.front_rgb"
+                        },
+                        "side_rgb": {
+                            "original_key": "observation.images.side_rgb"
                         },
                         "hand_rgb": {
                             "original_key": "observation.images.hand_rgb"
@@ -381,22 +381,21 @@ def serialize_dict(stats: dict[str, torch.Tensor | np.ndarray | dict]) -> dict:
     return unflatten_dict(serialized_dict)
 
 
-
-def port_hsr(
+def port_ur5e(
     raw_dir: Path,
     repo_id: str,
     raw_repo_id: str | None = None,
     task: str = "DEBUG",
     *,
     episodes: list[int] | None = None,
-    push_to_hub: bool = False,
+    push_to_hub: bool = True,
     mode: Literal["video", "image"] = "video",
     dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
 ):
     if (LEROBOT_HOME / repo_id).exists():
         shutil.rmtree(LEROBOT_HOME / repo_id)
 
-    hdf5_files = sorted(raw_dir.glob("./*.hdf5"))
+    hdf5_files = sorted(raw_dir.glob("./*/main.rmb.hdf5"))
 
     dataset = create_empty_dataset(
         repo_id,
@@ -446,8 +445,7 @@ def port_hsr(
 
     if push_to_hub:
         dataset.push_to_hub()
-    print("Finished converting dataset.")
 
 
 if __name__ == "__main__":
-    tyro.cli(port_hsr)
+    tyro.cli(port_ur5e)
