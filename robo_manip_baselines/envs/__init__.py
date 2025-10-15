@@ -75,6 +75,11 @@ register(
 )
 
 register(
+    id="robo_manip_baselines/MujocoHsrRealTidyupEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrRealTidyupEnv",
+)
+
+register(
     id="robo_manip_baselines/MujocoHsrPaPEnv-v0",
     entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrPaPEnv",
 )
