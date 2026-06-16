@@ -1,0 +1,58 @@
+<mujoco model="hsr_ring">
+  <include file="./env_hsr_common.xml"/>
+
+  <size memory="1G"/>
+
+  <asset>
+    <texture name="ring" file="general/metal2.png" type="cube"/>
+    <material name="ring" texture="ring" rgba="0.5 0.5 1 1" specular="1.0" shininess="1.0"/>
+    <texture name="hook" file="general/wood1.png" type="cube"/>
+    <material name="hook" texture="hook" rgba="1 0.2 0.2 1" specular="0.2" shininess="0.3"/>
+    <texture name="pole" file="general/wood1.png" type="cube"/>
+    <material name="pole" texture="pole" rgba="1 1 0 1" specular="0.2" shininess="0.3"/>
+  </asset>
+
+  <include file="../../robots/hsr/hsr_config.xml"/>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true" diffuse="0.3 0.3 0.3"/>
+
+    <camera name="front" mode="fixed" pos="1.0 0.0 1.5" euler="0.0 0.785398 1.5708"/>
+    <camera name="side" mode="fixed" pos="0.1 -0.9 0.9" euler="1.5708 0.0 0.0"/>
+
+    <geom name="floor" size="0 0 0.05" type="plane" material="floor"/>
+
+    <geom name="wall1" type="box" size="10 10 0.01" pos="10 0 10" zaxis="1 0 0" material="wall"/>
+    <geom name="wall2" type="box" size="10 10 0.01" pos="-10 0 10" zaxis="1 0 0" material="wall"/>
+    <geom name="wall3" type="box" size="10 10 0.01" pos="0 10 10" zaxis="0 1 0" material="wall"/>
+    <geom name="wall4" type="box" size="10 10 0.01" pos="0 -10 10" zaxis="0 1 0" material="wall"/>
+
+    <body name="table">
+      <geom type="box" size="0.275 0.5 0.1175" pos="0.7 0 0.1175" material="table_base"/>
+      <geom type="box" size="0.275 0.5 0.0075" pos="0.7 0 0.2425" material="table_plate"/>
+    </body>
+
+    <include file="../../robots/hsr/hsr_body.xml"/>
+
+    <body name="ring" pos="0.55 0.0 0.23">
+      <freejoint/>
+      <body name="ring_B0" pos="0.1 -0.15 0.15" euler="0 -1.5708 -1.5708">
+        <composite prefix="ring_" type="loop" count="11" spacing="0.04">
+          <joint kind="main" damping="0.005"/>
+          <geom type="capsule" size="0.01 0.012" material="ring"/>
+        </composite>
+      </body>
+    </body>
+
+    <body name="fooks" pos="0.55 0.0 0.23">
+      <geom name="fook1" type="cylinder" size="0.01 0.02"
+            pos="0.1 -0.13 0.25" euler="0 1.5708 0" material="hook"/>
+      <geom name="fook2" type="cylinder" size="0.01 0.02"
+            pos="0.1 -0.17 0.25" euler="0 1.5708 0" material="hook"/>
+    </body>
+
+    <body name="pole" pos="0.55 0.0 0.23">
+      <geom type="cylinder" size="0.01 0.03" pos="0.0 0.0 0.05" material="pole"/>
+    </body>
+  </worldbody>
+</mujoco>

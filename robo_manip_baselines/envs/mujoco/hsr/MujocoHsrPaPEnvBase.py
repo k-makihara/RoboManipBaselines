@@ -71,18 +71,27 @@ class MujocoHsrEnvBase(MujocoEnvBase):
         default_kwargs = self.get_input_device_kwargs(input_device_name)
 
         if input_device_name == "spacemouse":
+            mobile_kwargs = overwrite_kwargs.get(1, {}).copy()
+            mobile_input_device_name = mobile_kwargs.pop("input_device", "spacemouse")
+
+            if mobile_input_device_name == "spacemouse":
+                MobileInputDeviceClass = SpacemouseMobileInputDevice
+            elif mobile_input_device_name == "keyboard":
+                MobileInputDeviceClass = KeyboardMobileInputDevice
+            else:
+                raise ValueError(
+                    f"[{self.__class__.__name__}] Invalid mobile input device key: "
+                    f"{mobile_input_device_name}"
+                )
+
             return [
                 SpacemouseInputDevice(
                     motion_manager.body_manager_list[0],
                     **{**default_kwargs.get(0, {}), **overwrite_kwargs.get(0, {})},
                 ),
-                # SpacemouseMobileInputDevice(
-                #     motion_manager.body_manager_list[1],
-                #     **{**default_kwargs.get(1, {}), **overwrite_kwargs.get(1, {})},
-                # ),
-                KeyboardMobileInputDevice(
+                MobileInputDeviceClass(
                     motion_manager.body_manager_list[1],
-                    **{**default_kwargs.get(1, {}), **overwrite_kwargs.get(1, {})},
+                    **{**default_kwargs.get(1, {}), **mobile_kwargs},
                 ),
             ]
         else:

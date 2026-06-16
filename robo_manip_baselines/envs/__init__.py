@@ -88,6 +88,34 @@ register(
     id="robo_manip_baselines/MujocoHsrShelfRealPaPEnv-v0",
     entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrShelfRealPaPEnv",
 )
+register(
+    id="robo_manip_baselines/MujocoHsrDoorEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrDoorEnv",
+)
+register(
+    id="robo_manip_baselines/MujocoHsrRingEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrRingEnv",
+)
+register(
+    id="robo_manip_baselines/MujocoHsrParticleEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrParticleEnv",
+)
+register(
+    id="robo_manip_baselines/MujocoHsrClothEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrClothEnv",
+)
+register(
+    id="robo_manip_baselines/MujocoHsrToolboxEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrToolboxEnv",
+)
+register(
+    id="robo_manip_baselines/MujocoHsrCabinetEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrCabinetEnv",
+)
+register(
+    id="robo_manip_baselines/MujocoHsrInsertEnv-v0",
+    entry_point="robo_manip_baselines.envs.mujoco:MujocoHsrInsertEnv",
+)
 
 ## G1
 register(

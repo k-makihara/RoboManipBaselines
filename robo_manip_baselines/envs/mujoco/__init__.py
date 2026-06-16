@@ -21,5 +21,12 @@ from .hsr.MujocoHsrTidyupEnv import MujocoHsrTidyupEnv
 from .hsr.MujocoHsrPaPEnv import MujocoHsrPaPEnv
 from .hsr.MujocoHsrShelfPaPEnv import MujocoHsrShelfPaPEnv
 from .hsr.MujocoHsrShelfRealPaPEnv import MujocoHsrShelfRealPaPEnv
+from .hsr.MujocoHsrDoorEnv import MujocoHsrDoorEnv
+from .hsr.MujocoHsrRingEnv import MujocoHsrRingEnv
+from .hsr.MujocoHsrParticleEnv import MujocoHsrParticleEnv
+from .hsr.MujocoHsrClothEnv import MujocoHsrClothEnv
+from .hsr.MujocoHsrToolboxEnv import MujocoHsrToolboxEnv
+from .hsr.MujocoHsrCabinetEnv import MujocoHsrCabinetEnv
+from .hsr.MujocoHsrInsertEnv import MujocoHsrInsertEnv
 
 from .g1.MujocoG1BottlesEnv import MujocoG1BottlesEnv

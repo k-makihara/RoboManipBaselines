@@ -1,0 +1,74 @@
+from os import path
+
+import mujoco
+import numpy as np
+from matplotlib.path import Path
+
+from .MujocoHsrPaPEnvBase import MujocoHsrEnvBase
+
+
+class MujocoHsrRingEnv(MujocoHsrEnvBase):
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        MujocoHsrEnvBase.__init__(
+            self,
+            path.join(
+                path.dirname(__file__),
+                "../../assets/mujoco/envs/hsr/env_hsr_ring.xml",
+            ),
+            np.array([0.0, 0.0, 0.0, 0.2, -0.6, 0.0, -1.0, 0.0, 0.8]),
+            **kwargs,
+        )
+
+        self.original_pole_pos = self.model.body("pole").pos.copy()
+        self.pole_pos_offsets = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [0.0, 0.04, 0.0],
+                [0.0, 0.08, 0.0],
+                [0.0, 0.12, 0.0],
+                [0.0, 0.16, 0.0],
+                [0.0, 0.20, 0.0],
+            ]
+        )
+
+        self.ring_body_ids = None
+
+    def _get_success(self):
+        if self.ring_body_ids is None:
+            self.ring_body_ids = []
+            for body_id in range(self.model.nbody):
+                name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_BODY, body_id)
+                if name is not None and name.startswith("ring_B"):
+                    self.ring_body_ids.append(body_id)
+        ring_grid_pos_list = np.array(
+            [self.data.xpos[body_id] for body_id in self.ring_body_ids]
+        )
+
+        pole_pos = self.data.body("pole").xpos.copy()
+
+        z_thre = pole_pos[2] + 0.08
+        if ring_grid_pos_list[:, 2].max() > z_thre:
+            return False
+
+        ring_grid_xy_list = ring_grid_pos_list[:, :2]
+        ring_grid_xy_list = np.vstack([ring_grid_xy_list, ring_grid_xy_list[0]])
+        ring_path = Path(ring_grid_xy_list)
+        return ring_path.contains_point(pole_pos[:2])
+
+    def modify_world(self, world_idx=None, cumulative_idx=None):
+        if world_idx is None:
+            world_idx = cumulative_idx % len(self.pole_pos_offsets)
+
+        pole_pos = self.original_pole_pos + self.pole_pos_offsets[world_idx]
+        if self.world_random_scale is not None:
+            pole_pos += np.random.uniform(
+                low=-1.0 * self.world_random_scale, high=self.world_random_scale, size=3
+            )
+        self.model.body("pole").pos = pole_pos
+        self.model.body("ring").pos = pole_pos
+        self.model.body("fooks").pos = pole_pos
+
+        return world_idx
