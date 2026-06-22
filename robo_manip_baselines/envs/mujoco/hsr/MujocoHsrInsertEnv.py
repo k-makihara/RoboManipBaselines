@@ -6,6 +6,13 @@ from .MujocoHsrPaPEnvBase import MujocoHsrEnvBase
 
 
 class MujocoHsrInsertEnv(MujocoHsrEnvBase):
+    default_camera_config = {
+        "azimuth": -60.0,
+        "elevation": -35.0,
+        "distance": 1.8,
+        "lookat": [0.5, 0.0, 0.3],
+    }
+
     def __init__(
         self,
         **kwargs,
@@ -16,7 +23,7 @@ class MujocoHsrInsertEnv(MujocoHsrEnvBase):
                 path.dirname(__file__),
                 "../../assets/mujoco/envs/hsr/env_hsr_insert.xml",
             ),
-            np.array([0.0, 0.0, 0.0, 0.22, -0.55, 0.0, -0.95, 0.0, 0.8]),
+            np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.57, 0.0, 0.8]),
             **kwargs,
         )
 

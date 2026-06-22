@@ -26,7 +26,7 @@ class MujocoHsrShelfPaPEnv(MujocoHsrEnvBase):
             ),
             #np.array([0.0] * 3 + [0.25, -2.0, 0.0, -1.0, 0.0, 0.8]),
             #np.array([-0.5 ,-0.1, 0.0] + [0.35, -2.2, 0.0, -0.3, 0.0, 0.8]),
-            np.array([-0.5 ,-0.1, 0.0] + [0.1, -0.4, 0.0, -1.0, 0.0, 0.8]),
+            np.array([-0.3 , 0.0, 0.0, 0.0, 0.0, 0.0, -1.57, 0.0, 0.8]),
             **kwargs,
         )
         
@@ -34,12 +34,12 @@ class MujocoHsrShelfPaPEnv(MujocoHsrEnvBase):
         self.original_obj_pos = self.model.body("bottle1").pos.copy()
         self.obj_pos_offsets = np.array(
             [
-                #[-0.03, 0.0, 0.0],
+                [-0.03, 0.0, 0.0],
                 [0.0, 0.0, 0.0],
-                #[0.03, 0.0, 0.0],
-                #[0.06, 0.0, 0.0],
-                #[0.09, 0.0, 0.0],
-                #[0.12, 0.0, 0.0],
+                [0.03, 0.0, 0.0],
+                [0.06, 0.0, 0.0],
+                [0.09, 0.0, 0.0],
+                [0.12, 0.0, 0.0],
             ]
             )
         self.original_robot_pos = self.model.body("hsr_body").pos.copy()
@@ -66,24 +66,41 @@ class MujocoHsrShelfPaPEnv(MujocoHsrEnvBase):
             ]
             )
 
+    def _set_freejoint_body_pose(self, body_name, pos, quat):
+        body_id = mujoco.mj_name2id(self.model, mjtObj.mjOBJ_BODY, body_name)
+        jnt_id = self.model.body_jntadr[body_id]
+        qpos_addr = self.model.jnt_qposadr[jnt_id]
+
+        self.init_qpos[qpos_addr : qpos_addr + 3] = pos
+        self.init_qpos[qpos_addr + 3 : qpos_addr + 7] = quat
+
+    def _get_success(self):
+        bottle_pos = self.data.body("bottle1").xpos.copy()
+        shelf_pos = self.model.body("shelf2").pos.copy()
+        bottle_up = self.data.body("bottle1").xmat.reshape(3, 3)[:, 2]
+
+        in_target_x = abs(bottle_pos[0] - shelf_pos[0]) < 0.24
+        in_target_y = abs(bottle_pos[1] - shelf_pos[1]) < 0.12
+        on_shelf_z = 0.62 < bottle_pos[2] < 1.05
+        not_toppled = bottle_up[2] > 0.9
+
+        return in_target_x and in_target_y and on_shelf_z and not_toppled
+
     def modify_world(self, world_idx=None, cumulative_idx=None):
         if world_idx is None:
             world_idx = cumulative_idx % len(self.obj_pos_offsets)
 
         obj_pos = self.original_obj_pos + self.obj_pos_offsets[world_idx]
-        # if self.world_random_scale is not None:
-        #    obj_pos += np.random.uniform(
-        #        low=-1.0 * self.world_random_scale, high=self.world_random_scale, size=3
-        #    )
-        
+        if self.world_random_scale is not None:
+            obj_pos[:2] += np.random.uniform(
+                low=-1.0 * self.world_random_scale,
+                high=self.world_random_scale,
+                size=2,
+            )
         obj_pos[2] = self.original_obj_pos[2]
-        
-        body_id = mujoco.mj_name2id(self.model, mjtObj.mjOBJ_BODY, "bottle1")
-        jnt_id = self.model.body_jntadr[body_id]
-        qpos_addr = self.model.jnt_qposadr[jnt_id]
-
-        self.init_qpos[qpos_addr : qpos_addr+3] = obj_pos
-        self.init_qpos[qpos_addr+3 : qpos_addr+7] = np.array([1.0, 0.0, 0.0, 0.0])
+        self._set_freejoint_body_pose(
+            "bottle1", obj_pos, np.array([1.0, 0.0, 0.0, 0.0])
+        )
 
 
 

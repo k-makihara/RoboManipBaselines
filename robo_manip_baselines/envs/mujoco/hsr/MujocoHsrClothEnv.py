@@ -7,6 +7,14 @@ from .MujocoHsrPaPEnvBase import MujocoHsrEnvBase
 
 
 class MujocoHsrClothEnv(MujocoHsrEnvBase):
+
+    default_camera_config = {
+        "azimuth": -45.0,
+        "elevation": -45.0,
+        "distance": 1.8,
+        "lookat": [0.5, 0.0, 0.3],
+    }
+
     def __init__(
         self,
         **kwargs,
@@ -17,7 +25,7 @@ class MujocoHsrClothEnv(MujocoHsrEnvBase):
                 path.dirname(__file__),
                 "../../assets/mujoco/envs/hsr/env_hsr_cloth.xml",
             ),
-            np.array([0.0, 0.0, 0.0, 0.25, -0.6, 0.0, -1.0, 0.0, 0.8]),
+            np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.57, 0.0, 0.8]),
             **kwargs,
         )
 
@@ -25,12 +33,12 @@ class MujocoHsrClothEnv(MujocoHsrEnvBase):
         self.original_board_pos = self.model.body("board").pos.copy()
         self.pos_cloth_offsets = np.array(
             [
-                [0.0, -0.12, 0.0],
-                [0.0, -0.08, 0.0],
-                [0.0, -0.04, 0.0],
-                [0.0, 0.0, 0.0],
-                [0.0, 0.04, 0.0],
-                [0.0, 0.08, 0.0],
+                [-0.2, -0.12, 0.0],
+                [-0.2, -0.08, 0.0],
+                [-0.2, -0.04, 0.0],
+                [-0.2, 0.0, 0.0],
+                [-0.2, 0.04, 0.0],
+                [-0.2, 0.08, 0.0],
             ]
         )
 

@@ -3,11 +3,11 @@
 
   <asset>
     <texture name="bottle" file="general/metal2.png" type="cube"/>
-    <material name="bottle1" texture="bottle" rgba="0.1 0.5 0.8 1.0" specular="1.0" shininess="1.0"/>
+    <material name="bottle1" texture="bottle" rgba="0.6 0.8 1.0 1.0" specular="1.0" shininess="1.0"/>
     <material name="bottle2" texture="bottle" rgba="0.8 0.1 0.5 1.0" specular="1.0" shininess="1.0"/>
     <texture name="container1" type="cube" file="general/wood1.png"/>
-    <material name="container1" texture="container1" rgba="0.1 0.5 0.1 1.0" specular="0.2" shininess="0.3"/>
-    <material name="container2" texture="container1" rgba="0.5 0.1 0.1 1.0" specular="0.2" shininess="0.3"/>
+    <material name="container1" texture="container1" rgba="0.4 0.9 0.4 1.0" specular="0.2" shininess="0.3"/>
+    <material name="container2" texture="container1" rgba="0.9 0.4 0.4 1.0" specular="0.2" shininess="0.3"/>
      <material name="container3" texture="container1" rgba="0.5 0.5 0.1 1.0" specular="0.2" shininess="0.3"/>
   </asset>
 
@@ -25,7 +25,7 @@
 
     <include file="../../robots/hsr/hsr_body.xml"/>
 
-    <body name="bottle1" pos="0.5 -0.3 0.68">
+    <body name="bottle1" pos="0.5 -0.3 0.48">
       <freejoint/>
       <geom type="box" size="0.025 0.025 0.07" pos="0 0 0.07" material="bottle1"/>
     </body>
@@ -41,7 +41,7 @@
       <!-- 中段棚板 -->
       <geom name="shelf_middle1" type="box"
             size="0.3 0.15 0.005"
-            pos="0 0 0.6"           
+            pos="0 0 0.4"           
             material="container1"/>
 
       <!-- 底板 -->
@@ -79,7 +79,7 @@
       <!-- 中段棚板 -->
       <geom name="shelf_middle2" type="box"
             size="0.3 0.15 0.005"
-            pos="0 0 0.6"           
+            pos="0 0 0.7"           
             material="container2"/>
 
       <!-- 底板 -->

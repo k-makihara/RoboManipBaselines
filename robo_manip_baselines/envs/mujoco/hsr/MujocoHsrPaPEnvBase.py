@@ -110,6 +110,10 @@ class MujocoHsrEnvBase(MujocoEnvBase):
         return [DataKey.COMMAND_MOBILE_OMNI_VEL, DataKey.COMMAND_JOINT_POS]
 
     @property
+    def camera_names(self):
+        return [camera_name for camera_name in super().camera_names if camera_name in ("head", "hand")]
+
+    @property
     def measured_keys_to_save(self):
         return [
             DataKey.MEASURED_JOINT_POS,

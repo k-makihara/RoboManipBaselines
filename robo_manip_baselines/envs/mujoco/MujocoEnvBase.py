@@ -102,7 +102,8 @@ class MujocoEnvBase(EnvDataMixin, MujocoEnv, ABC):
 
         info["rgb_images"] = {}
         info["depth_images"] = {}
-        for camera_name, camera in self.cameras.items():
+        for camera_name in self.camera_names:
+            camera = self.cameras[camera_name]
             camera["viewer"].make_context_current()
             rgb_image = camera["viewer"].render(
                 render_mode="rgb_array", camera_id=camera["id"]

@@ -7,10 +7,10 @@ from .MujocoHsrPaPEnvBase import MujocoHsrEnvBase
 
 class MujocoHsrDoorEnv(MujocoHsrEnvBase):
     default_camera_config = {
-        "azimuth": 45.0,
+        "azimuth": -45.0,
         "elevation": -45.0,
         "distance": 1.8,
-        "lookat": [0.5, 0.0, 0.5],
+        "lookat": [0.5, 0.0, 0.3],
     }
 
     def __init__(
@@ -23,19 +23,19 @@ class MujocoHsrDoorEnv(MujocoHsrEnvBase):
                 path.dirname(__file__),
                 "../../assets/mujoco/envs/hsr/env_hsr_door.xml",
             ),
-            np.array([0.0, 0.0, 0.0, 0.22, -0.45, 0.0, -0.95, 0.0, 0.8]),
+            np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.57, 0.0, 0.8]),
             **kwargs,
         )
 
         self.original_door_pos = self.model.body("door").pos.copy()
         self.door_pos_offsets = np.array(
             [
-                [0.0, -0.06, 0.0],
-                [0.0, -0.03, 0.0],
-                [0.0, 0.0, 0.0],
-                [0.0, 0.03, 0.0],
-                [0.0, 0.06, 0.0],
-                [0.0, 0.09, 0.0],
+                [-0.1, -0.06, 0.0],
+                [-0.1, -0.03, 0.0],
+                [-0.1, 0.0, 0.0],
+                [-0.1, 0.03, 0.0],
+                [-0.1, 0.06, 0.0],
+                [-0.1, 0.09, 0.0],
             ]
         )
 

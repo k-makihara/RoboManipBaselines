@@ -31,13 +31,13 @@
 
     <include file="../../robots/hsr/hsr_body.xml"/>
 
-    <body name="peg" pos="0.57 -0.13 0.32" euler="-3.1415 0.0 3.1415">
+    <body name="peg" pos="0.47 -0.13 0.32" euler="-3.1415 0.0 3.1415">
       <freejoint/>
       <geom type="box" size="0.015 0.015 0.02" pos="0.0 0.0 0.02" material="peg1"/>
       <geom type="box" size="0.015 0.015 0.02" pos="0.0 0.0 -0.02" material="peg2"/>
     </body>
 
-    <body name="hole" pos="0.67 -0.08 0.25">
+    <body name="hole" pos="0.62 -0.08 0.25">
       <geom name="hole1" type="box" size="0.02 0.045 0.02" pos="0.045 -0.02 0.02" material="hole"/>
       <geom name="hole2" type="box" size="0.02 0.045 0.02" pos="-0.045 0.02 0.02" material="hole"/>
       <geom name="hole3" type="box" size="0.045 0.02 0.02" pos="0.02 0.045 0.02" material="hole"/>

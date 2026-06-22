@@ -11,7 +11,7 @@ class SpacemouseInputDevice(InputDeviceBase):
         self,
         arm_manager,
         pos_scale=1e-2,
-        rpy_scale=5e-3,
+        rpy_scale=5e-2,
         gripper_scale=5.0,
         device_params={},
     ):
