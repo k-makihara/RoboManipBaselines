@@ -1,1 +1,10 @@
 python ./bin/Teleop.py MujocoHsrTidyup --input_device keyboard
+
+
+
+./robo_manip_baselines/misc/rollout_success_rate.sh \
+  --policy Gr00t \
+  --env-list "MujocoUR5eCable MujocoUR5eDoor MujocoUR5eInsert" \
+  --checkpoint /path/to/policy_last.ckpt \
+  --world-idx-list "0 1 2 3 4" \
+  --num-rollouts 30

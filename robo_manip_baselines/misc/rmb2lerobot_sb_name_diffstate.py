@@ -5,8 +5,6 @@ Example usage: uv run examples/aloha_real/convert_aloha_data_to_lerobot.py --raw
 """
 
 import dataclasses
-import os
-import sys
 from pathlib import Path
 import shutil
 from typing import Literal
@@ -15,20 +13,14 @@ import json
 import einops
 import cv2
 import h5py
-_LOCAL_LEROBOT = Path(__file__).resolve().parents[3] / "lerobot"
-if _LOCAL_LEROBOT.exists():
-    sys.path.insert(0, str(_LOCAL_LEROBOT))
+#from lerobot.common.datasets.lerobot_dataset import LEROBOT_HOME
+LEROBOT_HOME=Path("/groups/gaf51379/physical-grounding/datasets/lerobot_dataset")
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 #from lerobot.common.datasets.push_dataset_to_hub._download_raw import download_raw
 import numpy as np
 import torch
 import tqdm
 import tyro
-
-
-LEROBOT_HOME = Path(
-    os.environ.get("HF_LEROBOT_HOME", "/groups/gag51454/workspace_makihara/dataset/lerobot_dataset")
-)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -51,21 +43,18 @@ def create_empty_dataset(
     has_velocity: bool = False,
     has_effort: bool = False,
     dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
-    overwrite: bool = False,
 ) -> LeRobotDataset:
     motors = [
-        "arm_lift_joint",
-        "arm_flex_joint",
-        "arm_roll_joint",
-        "wrist_flex_joint",
-        "wrist_roll_joint",
-        "hand_motor_joint",
-        "base_x",
-        "base_y",
-        "base_t",
+        "base",
+        "shoulder",
+        "elbow",
+        "wrist_1",
+        "wrist_2",
+        "wrist_3",
+        "gripper",
     ]
     cameras = [
-        "head_rgb",
+        "front_rgb",
         "hand_rgb",
     ]
 
@@ -98,7 +87,7 @@ def create_empty_dataset(
     if has_effort:
         features["observation.effort"] = {
             "dtype": "float64",
-            "shape": (len(motors),),
+            "shape": (6,),
             "names": [
                 motors,
             ],
@@ -115,33 +104,14 @@ def create_empty_dataset(
             ],
         }
 
-    dataset_root = LEROBOT_HOME / repo_id
-    info_path = dataset_root / "meta" / "info.json"
-
-    if dataset_root.exists():
-        if overwrite:
-            shutil.rmtree(dataset_root)
-        elif info_path.exists():
-            dataset = LeRobotDataset(
-                repo_id=repo_id,
-                root=dataset_root,
-                download_videos=False,
-                video_backend=dataset_config.video_backend,
-            )
-            dataset.episode_buffer = None
-            return dataset
-        else:
-            raise FileExistsError(
-                f"{dataset_root} already exists but looks incomplete. "
-                "Use --overwrite to recreate the dataset from scratch."
-            )
+    if Path(LEROBOT_HOME / repo_id).exists():
+        shutil.rmtree(LEROBOT_HOME / repo_id)
 
     return LeRobotDataset.create(
         repo_id=repo_id,
         fps=30,
         robot_type=robot_type,
         features=features,
-        root=dataset_root,
         use_videos=dataset_config.use_videos,
         tolerance_s=dataset_config.tolerance_s,
         image_writer_processes=dataset_config.image_writer_processes,
@@ -189,7 +159,7 @@ def load_raw_images_per_camera(ep: h5py.File, cameras: list[str]) -> dict[str, n
 def load_raw_images_per_camera_from_mp4(ep_path: Path, cameras: list[str]) -> dict[str, np.ndarray]:
     imgs_per_cam = {}
     for camera in cameras:
-        video_path = ep_path.parent / f"{camera}_image.rmb.mp4"
+        video_path = ep_path / f"{camera}_image.rmb.mp4"
         cap = cv2.VideoCapture(video_path)
         ret, frame = cap.read()
         array = np.reshape(frame,(1,int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),3))
@@ -201,6 +171,9 @@ def load_raw_images_per_camera_from_mp4(ep_path: Path, cameras: list[str]) -> di
             array = np.append(array,frame,axis=0)
         cap.release()
 
+        if len(array) > 1:
+            array = array[:-1]
+
         imgs_per_cam[camera] = array
     return imgs_per_cam
 
@@ -208,36 +181,22 @@ def load_raw_images_per_camera_from_mp4(ep_path: Path, cameras: list[str]) -> di
 def load_raw_episode_data(
     ep_path: Path,
 ) -> tuple[dict[str, np.ndarray], torch.Tensor, torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
-    with h5py.File(ep_path, "r") as ep:
-        state_joint = ep["/measured_joint_pos"][:]
-        state_omni = ep["/measured_mobile_omni_vel"][:]
-        assert state_joint.shape[0] == state_omni.shape[0], "Mismatch in number of frames between joint positions and mobile omni velocities."
-        state_all = np.concatenate([state_joint, state_omni], axis=1)
-
-        action_joint = ep["/command_joint_pos"][:]
-        action_omni = ep["/command_mobile_omni_vel"][:]
-        assert action_joint.shape[0] == action_omni.shape[0], "Mismatch in number of frames between joint positions and mobile omni velocities."
-        action_all = np.concatenate([action_joint, action_omni], axis=1)
-
-        state = torch.from_numpy(state_all)
-        action = torch.from_numpy(action_all)
+    with h5py.File(ep_path / "main.rmb.hdf5", "r") as ep:
+        state = torch.from_numpy(ep["/measured_joint_pos"][:-1])
+        action = torch.from_numpy(ep["/measured_joint_pos"][1:])
 
         velocity = None
-        if "/measured_joint_vel" in ep and "/measured_mobile_omni_vel" in ep:
-            velocity_joint = ep["/measured_joint_vel"][:]
-            velocity_omni = ep["/measured_mobile_omni_vel"][:]
-            assert velocity_joint.shape[0] == velocity_omni.shape[0], "Mismatch in number of frames between joint positions and mobile omni velocities."
-            velocity_all = np.concatenate([velocity_joint, velocity_omni], axis=1)
-            velocity = torch.from_numpy(velocity_all)
+        if "/measured_joint_vel" in ep:
+            velocity = torch.from_numpy(ep["/measured_joint_vel"][:-1])
 
         effort = None
-        if "/effort" in ep:
-            effort = torch.from_numpy(ep["/effort"][:])
+        if "/measured_eef_wrench" in ep:
+            effort = torch.from_numpy(ep["/measured_eef_wrench"][:-1])
 
     imgs_per_cam = load_raw_images_per_camera_from_mp4(
         ep_path,
         [
-            "head_rgb",
+            "front_rgb",
             "hand_rgb",
         ],
     )
@@ -247,97 +206,98 @@ def load_raw_episode_data(
 
 def populate_dataset(
     dataset: LeRobotDataset,
-    hdf5_files: list[Path],
+    dataset_paths: list[Path],
     task: str,
     episodes: list[int] | None = None,
 ) -> LeRobotDataset:
-    completed_episodes = getattr(dataset.meta, "total_episodes", 0)
-    if episodes is None:
-        episodes = range(len(hdf5_files))
 
-    for ep_idx in tqdm.tqdm(episodes):
-        if ep_idx < completed_episodes:
-            continue
-        ep_path = hdf5_files[ep_idx]
-        raw_file_string = ep_path.parents[1].name
-        if "MujocoUR5eCable" in raw_file_string:
-            task = "pass the cable between two poles"
-        elif "MujocoUR5eRing" in raw_file_string:
-            task = "pick a ring and put it around the pole"
-        elif "MujocoUR5eParticle" in raw_file_string:
-            task = "scoop up particles"
-        elif "MujocoUR5eCloth" in raw_file_string:
-            task = "roll up the cloth"
-        elif "MujocoUR5eDoor" in raw_file_string:
-            task = "open the door"
-        elif "MujocoHsrTidyup" in raw_file_string:
-            #task = "Bring the object to the box"
-            task = "Pick up from the green box and put it in the red box"
-        elif "MujocoHsrShelfPaP" in raw_file_string:
-            task = "Pick up the blue from the green shelf and put it to the red shelf"
-        elif "MujocoHsrCloth" in raw_file_string:
-            task = "Roll up the cloth"
-        elif "MujocoHsrCabinet" in raw_file_string:
-            task = "Open the cabinet"
-        elif "MujocoHsrDoor" in raw_file_string:
-            task = "Open the door"
-        elif "MujocoHsrInsert" in raw_file_string:
-            task = "Pick up the peg and insert it to the yellow hole"
-        
 
-        imgs_per_cam, state, action, velocity, effort = load_raw_episode_data(ep_path)
-        num_frames = state.shape[0]
+    for task_path in dataset_paths:
+        task_episodes = sorted(task_path.glob("*"))
+        if episodes is None:
+            episodes = range(len(task_episodes))
 
-        if ep_idx == 0:
-            with open(dataset.root / "meta" / "modality.json", "w") as f:
-                modality = {
-                    "state": {
-                        "qpos": {
-                            "start": 0,
-                            "end": 9
-                        }
-                    },
-                    "action": {
-                        "action": {
-                            "start": 0,
-                            "end": 9
-                        }
-                    },
-                    "video": {
-                        "head_rgb": {
-                            "original_key": "observation.images.head_rgb"
+        for ep_idx in tqdm.tqdm(episodes):
+            ep_path = task_episodes[ep_idx]
+            raw_file_string = ep_path.parents[0].name
+            if "RealUR5eDemo_20250801_175635" in raw_file_string:
+                task = "Grasp the cookie package"
+            elif "RealUR5eDemo_20250801_181121" in raw_file_string:
+                task = "Grasp the plastic bottle"
+            elif "RealUR5eDemo_20250801_182658" in raw_file_string:
+                task = "Grasp the refill package"
+            elif "RealUR5eDemo_20250801_185051" in raw_file_string:
+                task = "Grasp the snack bag"
+            elif "RealUR5eDemo_20250801_203402" in raw_file_string:
+                task = "Grasp the chocolate box"
+            elif "RealUR5eDemo_20250801_205329" in raw_file_string:
+                task = "Grasp the refill package"
+            elif "RealUR5eDemo_20250804_172403" in raw_file_string:
+                task = "Grasp the snack bag"
+            elif "RealUR5eDemo_20250804_181153" in raw_file_string:
+                task = "Grasp the chocolate bar"
+            elif "RealUR5eDemo_20250804_184427" in raw_file_string:
+                task = "Grasp the glass bottle"
+            #elif "RealUR5eDemo_20250804_185508" in raw_file_string:
+            #    task = "Grasp SEVEN&i PREMIUM Langue de Chat White Chocolate"
+            elif "RealUR5eDemo_20250804_192155" in raw_file_string:
+                task = "Grasp the snack bag"
+            else:
+                task = "Grasp the object"
+            
+
+            imgs_per_cam, state, action, velocity, effort = load_raw_episode_data(ep_path)
+            num_frames = state.shape[0]
+
+            if ep_idx == 0:
+                with open(dataset.root / "meta" / "modality.json", "w") as f:
+                    modality = {
+                        "state": {
+                            "qpos": {
+                                "start": 0,
+                                "end": 7
+                            }
                         },
-                        "hand_rgb": {
-                            "original_key": "observation.images.hand_rgb"
-                        }
-                    },
-                    "annotation": {
-                        "human.action.task_description": {
-                            "original_key": "task_index"
+                        "action": {
+                            "action": {
+                                "start": 0,
+                                "end": 7
+                            }
+                        },
+                        "video": {
+                            "front_rgb": {
+                                "original_key": "observation.images.front_rgb"
+                            },
+                            "hand_rgb": {
+                                "original_key": "observation.images.hand_rgb"
+                            }
+                        },
+                        "annotation": {
+                            "human.action.task_description": {
+                                "original_key": "task_index"
+                            }
                         }
                     }
+                    json.dump(modality, f, indent=4)
+
+            for i in range(num_frames):
+                frame = {
+                    "observation.state": state[i],
+                    "action": action[i],
                 }
-                json.dump(modality, f, indent=4)
 
-        for i in range(num_frames):
-            frame = {
-                "observation.state": state[i],
-                "action": action[i],
-            }
+                for camera, img_array in imgs_per_cam.items():
+                    frame[f"observation.images.{camera}"] = img_array[i]
 
-            for camera, img_array in imgs_per_cam.items():
-                frame[f"observation.images.{camera}"] = img_array[i]
+                if velocity is not None:
+                    frame["observation.velocity"] = velocity[i]
+                if effort is not None:
+                    frame["observation.effort"] = effort[i]
+                if task is not None:
+                    frame["task"] = task
+                dataset.add_frame(frame)
 
-            if velocity is not None:
-                frame["observation.velocity"] = velocity[i]
-            if effort is not None:
-                frame["observation.effort"] = effort[i]
-            if task is not None:
-                frame["task"] = task
-
-            dataset.add_frame(frame)
-
-        dataset.save_episode()
+            dataset.save_episode()
 
     return dataset
 
@@ -446,24 +406,23 @@ def port_hsr(
     push_to_hub: bool = False,
     mode: Literal["video", "image"] = "video",
     dataset_config: DatasetConfig = DEFAULT_DATASET_CONFIG,
-    overwrite: bool = False,
 ):
-    hdf5_files = sorted(raw_dir.rglob("main.rmb.hdf5"))
-    if not hdf5_files:
-        raise ValueError(f"No episode files found under {raw_dir}")
+    if (LEROBOT_HOME / repo_id).exists():
+        shutil.rmtree(LEROBOT_HOME / repo_id)
+
+    dataset_paths = sorted(raw_dir.glob("./*"))
 
     dataset = create_empty_dataset(
         repo_id,
         robot_type="hsr",
         mode=mode,
-        has_effort=has_effort(hdf5_files),
-        has_velocity=has_velocity(hdf5_files),
+        has_effort=True,
+        has_velocity=True,
         dataset_config=dataset_config,
-        overwrite=overwrite,
     )
     dataset = populate_dataset(
         dataset,
-        hdf5_files,
+        dataset_paths,
         task=task,
         episodes=episodes,
     )
@@ -501,6 +460,8 @@ def port_hsr(
 
     if push_to_hub:
         dataset.push_to_hub()
+
+    print("Finished converting dataset.")
 
 
 if __name__ == "__main__":
