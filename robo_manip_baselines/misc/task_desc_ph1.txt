@@ -1,0 +1,5 @@
+MujocoHsrShelfPaP<TAB>Pick up the blue from the green shelf and put it to the red shelf
+MujocoHsrCloth<TAB>Roll up the cloth
+MujocoHsrCabinet<TAB>Open the cabinet
+MujocoHsrInsert<TAB>Pick up the peg and insert it to the yellow hole
+MujocoHsrDoor<TAB>Open the door

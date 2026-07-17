@@ -72,8 +72,9 @@ def main():
             gymutil,  # noqa: F401
         )
 
-    # This includes pytorch import, so it must be later than isaac import
-    from robo_manip_baselines.common import remove_prefix
+    # Import only the required utility to avoid pulling training-only deps
+    # (tensorboard/tensorflow/torchcodec) during rollout startup.
+    from robo_manip_baselines.common.utils.MiscUtils import remove_prefix
 
     operation_module = importlib.import_module(
         f"robo_manip_baselines.envs.operation.Operation{args.env}"

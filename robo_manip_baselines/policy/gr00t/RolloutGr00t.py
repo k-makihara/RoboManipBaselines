@@ -29,6 +29,35 @@ from robo_manip_baselines.common.data.DataKey import DataKey
 class RolloutGr00t(RolloutBase):
     require_task_desc = True
 
+    @staticmethod
+    def _normalize_action_component(arr, feature_dim):
+        arr = np.asarray(arr)
+        arr = np.squeeze(arr)
+
+        if arr.ndim == 1:
+            if feature_dim == 1:
+                return arr.reshape(-1, 1)
+            if arr.size == feature_dim:
+                return arr.reshape(1, feature_dim)
+            if arr.size % feature_dim == 0:
+                return arr.reshape(-1, feature_dim)
+            raise ValueError(f"Invalid 1D action shape: {arr.shape}, feature_dim={feature_dim}")
+
+        if arr.ndim == 2:
+            if arr.shape[1] == feature_dim:
+                return arr
+            if arr.shape[0] == feature_dim:
+                return arr.T
+            raise ValueError(f"Invalid 2D action shape: {arr.shape}, feature_dim={feature_dim}")
+
+        # Fallback for unexpected higher-rank outputs
+        arr = arr.reshape(-1, arr.shape[-1])
+        if arr.shape[1] == feature_dim:
+            return arr
+        if arr.shape[0] == feature_dim:
+            return arr.T
+        raise ValueError(f"Invalid action shape after reshape: {arr.shape}, feature_dim={feature_dim}")
+
     def setup_policy(self):
         # Print policy information
         self.print_policy_info()
@@ -137,13 +166,26 @@ class RolloutGr00t(RolloutBase):
 
             all_actions = self.gr00t.get_action(observation)
 
-            policy_action_arm = all_actions["action.arm"]
-            policy_action_gripper = np.expand_dims(all_actions["action.gripper"],axis=-1)
-            policy_action_base = all_actions["action.base"]
-            policy_action = np.concatenate([policy_action_arm, policy_action_gripper, policy_action_base], axis=1)
+            policy_action_arm = self._normalize_action_component(all_actions["action.arm"], 5)
+            policy_action_gripper = self._normalize_action_component(all_actions["action.gripper"], 1)
+            policy_action_base = self._normalize_action_component(all_actions["action.base"], 3)
+
+            n_steps = min(
+                policy_action_arm.shape[0],
+                policy_action_gripper.shape[0],
+                policy_action_base.shape[0],
+            )
+            policy_action = np.concatenate(
+                [
+                    policy_action_arm[:n_steps],
+                    policy_action_gripper[:n_steps],
+                    policy_action_base[:n_steps],
+                ],
+                axis=1,
+            )
 
             #action = np.expand_dims(policy_action, axis=0)
-            self.action_queue.extend(policy_action.transpose(0, 1))
+            self.action_queue.extend(policy_action)
 
         
         self.policy_action = self.action_queue.popleft()

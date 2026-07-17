@@ -3,7 +3,6 @@ import shutil
 
 import h5py
 import numpy as np
-import torchcodec
 import videoio
 
 from .DataKey import DataKey
@@ -27,9 +26,22 @@ class RmbData:
             self.path = path
             self.enable_cache = enable_cache
 
+        @staticmethod
+        def _get_torchcodec_module():
+            try:
+                import torchcodec
+
+                return torchcodec
+            except Exception:
+                return None
+
         def __len__(self):
-            decoder = torchcodec.decoders.VideoDecoder(self.path)
-            return decoder.metadata.num_frames
+            # Fallback to videoio when torchcodec runtime deps are unavailable.
+            torchcodec = self._get_torchcodec_module()
+            if torchcodec is not None:
+                decoder = torchcodec.decoders.VideoDecoder(self.path)
+                return decoder.metadata.num_frames
+            return videoio.videoread(self.path).shape[0]
 
         def __getitem__(self, idx):
             if self.enable_cache:
@@ -42,22 +54,28 @@ class RmbData:
 
     class RmbRgbVideo(RmbVideo):
         def _get_data(self, idx):
-            # torchcodec's VideoDecoder is slightly faster
-            # return videoio.videoread(self.path)[idx]
-            decoder = torchcodec.decoders.VideoDecoder(
-                self.path, dimension_order="NHWC"
-            )
-            return decoder[idx].numpy()
+            # torchcodec's VideoDecoder is slightly faster, but optional.
+            torchcodec = self._get_torchcodec_module()
+            if torchcodec is not None:
+                decoder = torchcodec.decoders.VideoDecoder(
+                    self.path, dimension_order="NHWC"
+                )
+                return decoder[idx].numpy()
+            return videoio.videoread(self.path)[idx]
 
         @property
         def shape(self):
-            decoder = torchcodec.decoders.VideoDecoder(self.path)
-            return (
-                decoder.metadata.num_frames,
-                decoder.metadata.height,
-                decoder.metadata.width,
-                3,
-            )
+            torchcodec = self._get_torchcodec_module()
+            if torchcodec is not None:
+                decoder = torchcodec.decoders.VideoDecoder(self.path)
+                return (
+                    decoder.metadata.num_frames,
+                    decoder.metadata.height,
+                    decoder.metadata.width,
+                    3,
+                )
+            frames = videoio.videoread(self.path)
+            return frames.shape
 
         @property
         def dtype(self):
@@ -69,12 +87,16 @@ class RmbData:
 
         @property
         def shape(self):
-            decoder = torchcodec.decoders.VideoDecoder(self.path)
-            return (
-                decoder.metadata.num_frames,
-                decoder.metadata.height,
-                decoder.metadata.width,
-            )
+            torchcodec = self._get_torchcodec_module()
+            if torchcodec is not None:
+                decoder = torchcodec.decoders.VideoDecoder(self.path)
+                return (
+                    decoder.metadata.num_frames,
+                    decoder.metadata.height,
+                    decoder.metadata.width,
+                )
+            frames = videoio.uint16read(self.path)
+            return frames.shape
 
         @property
         def dtype(self):

@@ -12,3 +12,10 @@ GPATH
 GRTAGS
 GSYMS
 GTAGS
+
+
+*.sh.*
+*.npy
+*.hdf5
+
+result_rollout

@@ -408,7 +408,7 @@ class RolloutBase(ABC):
 
             self.phase_manager.post_update()
 
-            self.key = cv2.waitKey(1)
+            self.key = self.poll_key_input()
             self.phase_manager.check_transition()
 
             if self.key == 27:  # escape key
@@ -426,6 +426,17 @@ class RolloutBase(ABC):
         self.print_statistics()
 
         # self.env.close()
+
+    def poll_key_input(self):
+        # In headless batch rollout (--no_plot and --no_render), keyboard polling is unnecessary.
+        if self.args.no_plot and self.args.no_render:
+            return -1
+
+        try:
+            return cv2.waitKey(1)
+        except cv2.error:
+            # Some environments ship OpenCV without HighGUI backend.
+            return -1
 
     def reset(self):
         # Reset plot
